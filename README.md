@@ -95,9 +95,10 @@ pnpm test
 - `@sca/api` — Jest (health + AuthService)
 - `@sca/web` — Vitest (api-client)
 
-## Credenciales seed (local)
+## Credenciales seed (solo local)
 
-- Admin: `admin@sca.local` / `Admin123!`
+Definí `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD` en tu `.env` (ver `.env.example`).  
+**Nunca** uses esas credenciales en producción ni subas un `.env` real.
 
 ## Licencia
 
