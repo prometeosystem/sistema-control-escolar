@@ -89,6 +89,8 @@ model User {
   examAttempts       ExamAttempt[]
   notifications      Notification[]
   emailLogs          EmailLog[]
+  parentLinksAsParent  ParentLink[] @relation("ParentLinksAsParent")
+  parentLinksAsStudent ParentLink[] @relation("ParentLinksAsStudent")
 
   @@index([schoolId])
   @@index([role])
@@ -428,6 +430,12 @@ enum EmailStatus {
   skipped
 }
 
+enum ParentLinkStatus {
+  pending
+  approved
+  rejected
+}
+
 model Notification {
   id        String    @id @default(uuid())
   userId    String
@@ -456,6 +464,21 @@ model EmailLog {
 
   @@index([userId, createdAt])
   @@index([status])
+}
+
+model ParentLink {
+  id        String           @id @default(uuid())
+  parentId  String
+  parent    User             @relation("ParentLinksAsParent", fields: [parentId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User             @relation("ParentLinksAsStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  status    ParentLinkStatus @default(pending)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([parentId, studentId])
+  @@index([studentId, status])
+  @@index([parentId, status])
 }
 
 /// Configuración SMTP editable por ADMIN desde el frontend (password cifrado).

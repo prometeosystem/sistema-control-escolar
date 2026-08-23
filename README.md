@@ -83,6 +83,7 @@ gh pr create --base develop --title "feat: mi cambio"
 | 3 | Hecha | Tareas / equipos / entregas / grades |
 | 4 | Hecha | Exámenes / quizzes (banco, aleatorio, Gemini hook) |
 | 5 | Hecho | Notificaciones + SMTP admin UI |
+| 6 | Hecho | Padres + panel admin + pulido UX |
 
 ## Exámenes (Fase 4)
 
@@ -90,12 +91,12 @@ gh pr create --base develop --title "feat: mi cambio"
 - Banco de preguntas + `questionsPerAttempt` aleatorias por alumno
 - Intentos máximos, nota mínima, audiencia restringida (parametrizables)
 - Auto-calificación local; **Gemini** activable con `GEMINI_API_KEY` + `autoGradeProvider=gemini`
-| 6 | Pendiente | Padres + admin + pulido UX |
 
 ## Tests
 
 ```bash
 pnpm test
+pnpm --filter @sca/api test:smoke   # smoke E2E contra API local
 ```
 
 - `@sca/shared` — Vitest (schemas Zod)

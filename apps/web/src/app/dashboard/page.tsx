@@ -63,22 +63,23 @@ export default function DashboardPage() {
       </header>
       {error ? <p role="alert">{error}</p> : null}
       <section className={styles.panel}>
-        <h2>Fase 5 lista</h2>
+        <h2>Fase 6 lista</h2>
         <p className={styles.muted}>
-          Notificaciones in-app y correo. El admin configura SMTP desde el
-          frontend.
+          Padres, panel admin y flujo completo de la escuela.
         </p>
-        <p>
-          <Link href="/classes">Ir a mis clases</Link>
-          {" · "}
+        <nav className={styles.nav}>
+          <Link href="/classes">Clases</Link>
           <Link href="/notifications">Notificaciones</Link>
+          {["PARENT", "STUDENT", "ADMIN"].includes(user.role) ? (
+            <Link href="/parents">Padres / vínculos</Link>
+          ) : null}
           {user.role === "ADMIN" ? (
             <>
-              {" · "}
-              <Link href="/admin/smtp">Configurar SMTP</Link>
+              <Link href="/admin">Panel admin</Link>
+              <Link href="/admin/smtp">SMTP</Link>
             </>
           ) : null}
-        </p>
+        </nav>
       </section>
     </main>
   );

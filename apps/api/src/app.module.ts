@@ -15,6 +15,8 @@ import { UsersModule } from "./modules/users/users.module";
 import { MailModule } from "./modules/mail/mail.module";
 import { SmtpSettingsModule } from "./modules/mail/smtp-settings.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
+import { ParentsModule } from "./modules/parents/parents.module";
+import { AdminModule } from "./modules/admin/admin.module";
 import { PrismaModule } from "./prisma/prisma.module";
 
 @Module({
@@ -35,6 +37,8 @@ import { PrismaModule } from "./prisma/prisma.module";
     MailModule,
     SmtpSettingsModule,
     NotificationsModule,
+    ParentsModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })
