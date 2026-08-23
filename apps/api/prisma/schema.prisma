@@ -1,0 +1,72 @@
+// Fase 1: auth, usuarios, escuela, ciclos.
+// El resto del dominio se agrega en fases posteriores (docs/diagrama-er.md).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+model School {
+  id        String          @id @default(uuid())
+  name      String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  users     User[]
+  cycles    AcademicCycle[]
+}
+
+model AcademicCycle {
+  id        String   @id @default(uuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name      String
+  startsAt  DateTime @db.Date
+  endsAt    DateTime @db.Date
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+}
+
+model User {
+  id            String         @id @default(uuid())
+  schoolId      String?
+  school        School?        @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  email         String         @unique
+  passwordHash  String
+  role          Role
+  fullName      String
+  emailNotify   Boolean        @default(true)
+  inAppNotify   Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+
+  @@index([schoolId])
+  @@index([role])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+}

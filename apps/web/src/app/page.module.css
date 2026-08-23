@@ -1,0 +1,66 @@
+.main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem clamp(1.25rem, 4vw, 4rem);
+  max-width: 48rem;
+}
+
+.brand {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--accent);
+}
+
+.title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.lead {
+  margin: 0 0 1.5rem;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 36rem;
+}
+
+.meta {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.1rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-weight: 650;
+}
+
+.primary {
+  background: var(--accent);
+  color: #04140d;
+}
+
+.secondary {
+  border: 1px solid #345547;
+  color: var(--fg);
+}

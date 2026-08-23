@@ -1,0 +1,53 @@
+.main {
+  min-height: 100vh;
+  padding: 2rem clamp(1.25rem, 4vw, 3rem);
+  max-width: 56rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.brand {
+  margin: 0;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.title {
+  margin: 0.25rem 0;
+  font-size: 1.75rem;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 0.25rem 0;
+}
+
+.button {
+  border: 1px solid #345547;
+  background: transparent;
+  color: var(--fg);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+}
+
+.panel {
+  border-top: 1px solid #2a4539;
+  padding-top: 1.25rem;
+}
+
+.panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.panel a {
+  text-decoration: underline;
+}
