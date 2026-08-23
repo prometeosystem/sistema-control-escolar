@@ -84,6 +84,9 @@ model User {
   teamMemberships    TeamMember[]
   gradesReceived     Grade[]            @relation("GradeStudent")
   gradesGiven        Grade[]            @relation("GradeTeacher")
+  createdExams       Exam[]             @relation("ExamCreator")
+  examAudience       ExamAudience[]
+  examAttempts       ExamAttempt[]
 
   @@index([schoolId])
   @@index([role])
@@ -118,6 +121,7 @@ model Class {
   memberships ClassMembership[]
   posts       Post[]
   assignments Assignment[]
+  exams       Exam[]
 
   @@index([schoolId])
   @@index([cycleId])
@@ -219,19 +223,22 @@ model Submission {
 }
 
 model Grade {
-  id           String      @id @default(uuid())
-  studentId    String
-  student      User        @relation("GradeStudent", fields: [studentId], references: [id], onDelete: Cascade)
-  assignmentId String?
-  assignment   Assignment? @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  submissionId String?     @unique
-  submission   Submission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  score        Decimal     @db.Decimal(8, 2)
-  maxScore     Decimal     @db.Decimal(8, 2)
-  feedback     String?
-  gradedById   String
-  gradedBy     User        @relation("GradeTeacher", fields: [gradedById], references: [id], onDelete: Cascade)
-  gradedAt     DateTime    @default(now())
+  id            String      @id @default(uuid())
+  studentId     String
+  student       User        @relation("GradeStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  assignmentId  String?
+  assignment    Assignment? @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  submissionId  String?     @unique
+  submission    Submission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  examAttemptId String?     @unique
+  examAttempt   ExamAttempt? @relation(fields: [examAttemptId], references: [id], onDelete: Cascade)
+  score         Decimal     @db.Decimal(8, 2)
+  maxScore      Decimal     @db.Decimal(8, 2)
+  feedback      String?
+  gradedById    String
+  gradedBy      User        @relation("GradeTeacher", fields: [gradedById], references: [id], onDelete: Cascade)
+  gradedAt      DateTime    @default(now())
+  passed        Boolean?
 
   @@index([studentId])
   @@index([assignmentId])
@@ -254,11 +261,161 @@ model Attachment {
   assignment   Assignment?    @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
   submissionId String?
   submission   Submission?    @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  examAnswerId String?
+  examAnswer   ExamAnswer?    @relation(fields: [examAnswerId], references: [id], onDelete: SetNull)
   createdAt    DateTime       @default(now())
 
   @@unique([storagePath])
   @@index([postId])
   @@index([assignmentId])
   @@index([submissionId])
+  @@index([examAnswerId])
   @@index([uploadedById])
+}
+
+enum QuestionType {
+  multiple_choice
+  true_false
+  short_answer
+  paragraph
+  file_upload
+}
+
+enum AutoGradeProvider {
+  none
+  gemini
+}
+
+enum ExamAttemptStatus {
+  in_progress
+  submitted
+  graded
+}
+
+model Exam {
+  id                    String            @id @default(uuid())
+  classId               String
+  class                 Class             @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdById           String
+  createdBy             User              @relation("ExamCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  title                 String
+  description           String?
+  timeLimitMin          Int?
+  /// Puntaje máximo del intento (suma de preguntas seleccionadas o fijo)
+  maxScore              Decimal           @db.Decimal(8, 2)
+  /// Calificación mínima para aprobar (parametrizable)
+  minPassingScore       Decimal?          @db.Decimal(8, 2)
+  /// Intentos máximos (null = ilimitado)
+  maxAttempts           Int?
+  /// Cuántas preguntas salen en el formulario (desde el banco)
+  questionsPerAttempt   Int
+  shuffleQuestions      Boolean           @default(true)
+  shuffleOptions        Boolean           @default(true)
+  /// Si false, todos los alumnos de la clase; si true, solo ExamAudience
+  restrictAudience      Boolean           @default(false)
+  allowFileAnswers      Boolean           @default(true)
+  showResultsToStudent  Boolean           @default(true)
+  autoGradeEnabled      Boolean           @default(false)
+  autoGradeProvider     AutoGradeProvider @default(none)
+  /// Placeholder futuro: usar GEMINI_API_KEY del env cuando provider=gemini
+  autoGradeModel        String?
+  opensAt               DateTime?
+  closesAt              DateTime?
+  publishedAt           DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  questions             ExamQuestion[]
+  audience              ExamAudience[]
+  attempts              ExamAttempt[]
+
+  @@index([classId])
+}
+
+model ExamQuestion {
+  id            String       @id @default(uuid())
+  examId        String
+  exam          Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  order         Int          @default(0)
+  type          QuestionType
+  prompt        String
+  /// Opciones para multiple_choice: [{ id, text }]
+  options       Json?
+  /// Respuesta correcta para auto-calificar (multiple_choice/true_false/short)
+  correctAnswer Json?
+  points        Decimal      @db.Decimal(8, 2) @default(1)
+  /// Permite adjuntar archivo en la respuesta
+  allowFileUpload Boolean    @default(false)
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  attemptItems  ExamAttemptQuestion[]
+  answers       ExamAnswer[]
+
+  @@index([examId, active])
+}
+
+model ExamAudience {
+  id        String   @id @default(uuid())
+  examId    String
+  exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([examId, studentId])
+}
+
+model ExamAttempt {
+  id          String            @id @default(uuid())
+  examId      String
+  exam        Exam              @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     User              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  attemptNo   Int
+  status      ExamAttemptStatus @default(in_progress)
+  startedAt   DateTime          @default(now())
+  submittedAt DateTime?
+  score       Decimal?          @db.Decimal(8, 2)
+  maxScore    Decimal?          @db.Decimal(8, 2)
+  passed      Boolean?
+  questions   ExamAttemptQuestion[]
+  answers     ExamAnswer[]
+  grade       Grade?
+
+  @@unique([examId, studentId, attemptNo])
+  @@index([examId, studentId])
+}
+
+model ExamAttemptQuestion {
+  id         String       @id @default(uuid())
+  attemptId  String
+  attempt    ExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId String
+  question   ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  position   Int
+  /// Opciones en orden mostrado al alumno (si shuffleOptions)
+  optionsOrder Json?
+
+  @@unique([attemptId, questionId])
+  @@unique([attemptId, position])
+}
+
+model ExamAnswer {
+  id             String       @id @default(uuid())
+  attemptId      String
+  attempt        ExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId     String
+  question       ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  /// Valor de respuesta (string, boolean, optionId, texto)
+  answer         Json?
+  isCorrect      Boolean?
+  pointsAwarded  Decimal?     @db.Decimal(8, 2)
+  autoGraded     Boolean      @default(false)
+  needsManualReview Boolean   @default(false)
+  feedback       String?
+  attachments    Attachment[]
+  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime     @default(now())
+
+  @@unique([attemptId, questionId])
 }

@@ -65,7 +65,7 @@ export const PresignFileSchema = z
     mimeType: z.string().min(3),
     size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
     purpose: z
-      .enum(["post", "assignment", "submission", "other"])
+      .enum(["post", "assignment", "submission", "exam_answer", "other"])
       .default("other"),
   })
   .superRefine((val, ctx) => {
@@ -100,6 +100,6 @@ export type ConfirmFileInput = z.infer<typeof ConfirmFileSchema>;
 export const CreateLinkAttachmentSchema = z.object({
   url: z.string().url(),
   title: z.string().min(1).max(200),
-  purpose: z.enum(["post", "assignment", "submission", "other"]).default("other"),
+  purpose: z.enum(["post", "assignment", "submission", "exam_answer", "other"]).default("other"),
 });
 export type CreateLinkAttachmentInput = z.infer<typeof CreateLinkAttachmentSchema>;

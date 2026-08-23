@@ -78,6 +78,9 @@ export default function ClassDetailPage() {
           <Link className={styles.button} href={`/classes/${params.id}/assignments`}>
             Tareas
           </Link>
+          <Link className={styles.button} href={`/classes/${params.id}/exams`}>
+            Exámenes
+          </Link>
           <Link className={styles.ghost} href="/classes">
             Todas las clases
           </Link>

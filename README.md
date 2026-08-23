@@ -81,8 +81,15 @@ gh pr create --base develop --title "feat: mi cambio"
 | 1 | Hecha | Auth + usuarios + escuela + roles |
 | 2 | Hecha | Clases + muro + Firebase Storage |
 | 3 | Hecha | Tareas / equipos / entregas / grades |
-| 4 | Pendiente | Exámenes |
+| 4 | Hecha | Exámenes / quizzes (banco, aleatorio, Gemini hook) |
 | 5 | Pendiente | Notificaciones + SMTP |
+
+## Exámenes (Fase 4)
+
+- Tipos: opción múltiple, V/F, corta, párrafo, subir archivo
+- Banco de preguntas + `questionsPerAttempt` aleatorias por alumno
+- Intentos máximos, nota mínima, audiencia restringida (parametrizables)
+- Auto-calificación local; **Gemini** activable con `GEMINI_API_KEY` + `autoGradeProvider=gemini`
 | 6 | Pendiente | Padres + admin + pulido UX |
 
 ## Tests
