@@ -19,6 +19,7 @@ import {
   UpdateExamInput,
 } from "@sca/shared";
 import { PrismaService } from "../../prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { AutoGradeService } from "./auto-grade.service";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -35,6 +36,7 @@ export class ExamsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly autoGrade: AutoGradeService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async listByClass(classId: string, userId: string, role: string) {
@@ -298,10 +300,38 @@ export class ExamsService {
     if (bank < exam.questionsPerAttempt) {
       throw new BadRequestException("Banco insuficiente para publicar");
     }
-    return this.prisma.exam.update({
+    const updated = await this.prisma.exam.update({
       where: { id },
       data: { publishedAt: new Date() },
     });
+
+    let studentIds: string[];
+    if (exam.restrictAudience) {
+      const audience = await this.prisma.examAudience.findMany({
+        where: { examId: id },
+        select: { studentId: true },
+      });
+      studentIds = audience.map((a) => a.studentId);
+    } else {
+      const members = await this.prisma.classMembership.findMany({
+        where: { classId: exam.classId, roleInClass: RoleInClass.student },
+        select: { userId: true },
+      });
+      studentIds = members.map((m) => m.userId);
+    }
+
+    void this.notifications.notifyMany(
+      studentIds.map((sid) => ({
+        userId: sid,
+        type: "exam.published",
+        title: `Nuevo examen: ${exam.title}`,
+        body: "Ya podés presentar el quiz. Revisá intentos y fecha límite.",
+        metadata: { examId: exam.id, classId: exam.classId },
+        emailSubject: `[SCA] Nuevo examen: ${exam.title}`,
+      })),
+    );
+
+    return updated;
   }
 
   async startAttempt(examId: string, userId: string, role: string) {

@@ -63,13 +63,21 @@ export default function DashboardPage() {
       </header>
       {error ? <p role="alert">{error}</p> : null}
       <section className={styles.panel}>
-        <h2>Fase 4 lista</h2>
+        <h2>Fase 5 lista</h2>
         <p className={styles.muted}>
-          Quizzes con banco aleatorio, intentos, nota mínima, archivos en
-          respuestas y hook Gemini para auto-calificación.
+          Notificaciones in-app y correo. El admin configura SMTP desde el
+          frontend.
         </p>
         <p>
           <Link href="/classes">Ir a mis clases</Link>
+          {" · "}
+          <Link href="/notifications">Notificaciones</Link>
+          {user.role === "ADMIN" ? (
+            <>
+              {" · "}
+              <Link href="/admin/smtp">Configurar SMTP</Link>
+            </>
+          ) : null}
         </p>
       </section>
     </main>

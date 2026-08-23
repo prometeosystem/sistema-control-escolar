@@ -23,7 +23,7 @@ Monorepo Classroom-like para secundaria: clases, muro, tareas individuales/equip
 - **Shared:** `packages/shared` — contratos Zod
 - **DB:** PostgreSQL (Docker Compose)
 - **Storage:** Firebase Storage
-- **Mail:** SMTP (Nodemailer en fases posteriores)
+- **Mail:** SMTP (Nodemailer); admin configura desde `/admin/smtp` (DB) con fallback a `SMTP_*`
 
 ## Inicio rápido
 
@@ -82,7 +82,7 @@ gh pr create --base develop --title "feat: mi cambio"
 | 2 | Hecha | Clases + muro + Firebase Storage |
 | 3 | Hecha | Tareas / equipos / entregas / grades |
 | 4 | Hecha | Exámenes / quizzes (banco, aleatorio, Gemini hook) |
-| 5 | Pendiente | Notificaciones + SMTP |
+| 5 | Hecho | Notificaciones + SMTP admin UI |
 
 ## Exámenes (Fase 4)
 

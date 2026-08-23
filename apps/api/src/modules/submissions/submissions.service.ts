@@ -13,10 +13,14 @@ import {
 } from "@prisma/client";
 import { GradeSubmissionInput, SubmitAssignmentInput } from "@sca/shared";
 import { PrismaService } from "../../prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 @Injectable()
 export class SubmissionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async listForAssignment(assignmentId: string, userId: string, role: string) {
     const assignment = await this.requireAssignment(assignmentId);
@@ -231,6 +235,21 @@ export class SubmissionsService {
         });
       }
     }
+
+    void this.notifications.notifyMany(
+      targets.map((sid) => ({
+        userId: sid,
+        type: "grade.published",
+        title: `Calificación: ${submission.assignment.title}`,
+        body: `Obtuviste ${input.score}/${maxScore}.${input.feedback ? ` ${input.feedback}` : ""}`,
+        metadata: {
+          assignmentId: submission.assignmentId,
+          submissionId,
+          score: input.score,
+        },
+        emailSubject: `[SCA] Calificación: ${submission.assignment.title}`,
+      })),
+    );
 
     return grade;
   }
