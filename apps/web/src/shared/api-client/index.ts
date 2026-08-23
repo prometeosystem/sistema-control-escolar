@@ -446,3 +446,127 @@ export async function markNotificationRead(token: string, id: string) {
 export async function markAllNotificationsRead(token: string) {
   return apiPost("/notifications/read-all", {}, token);
 }
+
+export type ParentChild = {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+};
+export type ChildSummary = ParentChild;
+
+export type ChildGrade = {
+  id: string;
+  score: string | number;
+  maxScore: string | number;
+  feedback: string | null;
+  assignment?: { id: string; title: string; classId: string } | null;
+};
+
+export type ChildSubmission = {
+  id: string;
+  status: string;
+  submittedAt: string | null;
+  assignment?: { id: string; title: string; classId: string; dueAt?: string } | null;
+  grade?: { score: string | number; maxScore?: string | number | null } | null;
+};
+
+export type ParentLinkRequest = {
+  id: string;
+  status: string;
+  createdAt: string;
+  parent: { id: string; fullName: string; email: string };
+  student: { id: string; fullName: string; email: string };
+};
+
+export type AdminStats = {
+  users: number;
+  teachers: number;
+  students: number;
+  parents: number;
+  classes: number;
+  assignments: number;
+  submissions: number;
+  exams: number;
+  pendingParentLinks: number;
+};
+
+export async function requestParentLink(token: string, studentEmail: string) {
+  return apiPost<ParentLinkRequest>(
+    "/parents/link-request",
+    { studentEmail },
+    token,
+  );
+}
+
+export async function listParentLinkRequests(token: string) {
+  return apiGet<ParentLinkRequest[]>("/parents/link-requests", token);
+}
+
+export async function approveParentLink(token: string, id: string) {
+  return apiPost<ParentLinkRequest>(
+    `/parents/link-requests/${id}/approve`,
+    {},
+    token,
+  );
+}
+
+export async function rejectParentLink(token: string, id: string) {
+  return apiPost<ParentLinkRequest>(
+    `/parents/link-requests/${id}/reject`,
+    {},
+    token,
+  );
+}
+
+export async function listParentChildren(token: string) {
+  return apiGet<ParentChild[]>("/parents/children", token);
+}
+
+export async function getChildGrades(token: string, childId: string) {
+  return apiGet<ChildGrade[]>(`/parents/children/${childId}/grades`, token);
+}
+
+export async function getChildSubmissions(token: string, childId: string) {
+  return apiGet<ChildSubmission[]>(
+    `/parents/children/${childId}/submissions`,
+    token,
+  );
+}
+
+export async function getAdminStats(token: string) {
+  return apiGet<AdminStats>("/admin/stats", token);
+}
+
+export async function inviteUser(
+  token: string,
+  input: {
+    email: string;
+    fullName: string;
+    role: "TEACHER" | "STUDENT" | "PARENT" | "ADMIN";
+    password: string;
+    schoolId?: string | null;
+  },
+) {
+  return apiPost("/admin/users/invite", input, token);
+}
+
+export async function listUsers(
+  token: string,
+  opts?: { role?: string; q?: string },
+) {
+  const q = new URLSearchParams();
+  if (opts?.role) q.set("role", opts.role);
+  if (opts?.q) q.set("q", opts.q);
+  const qs = q.toString();
+  return apiGet<{
+    data: Array<{
+      id: string;
+      email: string;
+      fullName: string;
+      role: string;
+      schoolId: string | null;
+    }>;
+    meta: { total: number };
+  }>(`/users${qs ? `?${qs}` : ""}`, token);
+}

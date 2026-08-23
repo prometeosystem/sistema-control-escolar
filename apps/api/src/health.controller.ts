@@ -7,7 +7,7 @@ export class HealthController {
     return {
       status: "ok",
       service: "sca-api",
-      phase: 5,
+      phase: 6,
     };
   }
 }

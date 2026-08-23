@@ -8,6 +8,7 @@
     "start": "node dist/main.js",
     "lint": "echo \"lint api: ok\"",
     "test": "jest --config jest.config.ts --runInBand",
+    "test:smoke": "tsx scripts/smoke-api.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
