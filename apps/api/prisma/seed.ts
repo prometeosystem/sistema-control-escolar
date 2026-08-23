@@ -30,8 +30,12 @@ async function main() {
   }
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@sca.local";
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "Admin123!";
-
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!adminPassword) {
+    throw new Error(
+      "Definí SEED_ADMIN_PASSWORD en .env antes de correr el seed (ver .env.example).",
+    );
+  }
   await prisma.user.upsert({
     where: { email: adminEmail },
     update: {

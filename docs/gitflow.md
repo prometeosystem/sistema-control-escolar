@@ -85,3 +85,7 @@ git checkout develop && git merge main && git push
 | feature | develop | Código + tests + docs si aplica |
 | release | main | Versión, changelog, fixes menores |
 | hotfix | main | Solo el parche + tests |
+
+## Verificación local
+
+Flujo `feature/*` → merge a `develop` validado en el entorno local antes de conectar el remote.
