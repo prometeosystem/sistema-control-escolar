@@ -79,7 +79,7 @@ gh pr create --base develop --title "feat: mi cambio"
 |------|--------|-----------|
 | 0 | Hecha | Docs + scaffold |
 | 1 | Hecha | Auth + usuarios + escuela + roles |
-| 2 | Pendiente | Clases + muro + Firebase Storage |
+| 2 | Hecha | Clases + muro + Firebase Storage |
 | 3 | Pendiente | Tareas / equipos / entregas / grades |
 | 4 | Pendiente | Exámenes |
 | 5 | Pendiente | Notificaciones + SMTP |

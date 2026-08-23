@@ -63,13 +63,13 @@ export default function DashboardPage() {
       </header>
       {error ? <p role="alert">{error}</p> : null}
       <section className={styles.panel}>
-        <h2>Fase 1 lista</h2>
+        <h2>Fase 2 lista</h2>
         <p className={styles.muted}>
-          Auth, usuarios, escuela y ciclos están en el API. La siguiente fase
-          agrega clases, muro y archivos.
+          Ya podés gestionar clases, el muro y archivos (Firebase Storage cuando
+          esté configurado).
         </p>
         <p>
-          <Link href="/">Volver al inicio</Link>
+          <Link href="/classes">Ir a mis clases</Link>
         </p>
       </section>
     </main>

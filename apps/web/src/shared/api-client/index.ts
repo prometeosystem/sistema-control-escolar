@@ -15,6 +15,32 @@ export type AuthResponse = {
   user: AuthUser;
 };
 
+export type Classroom = {
+  id: string;
+  name: string;
+  section: string | null;
+  subject: string | null;
+  joinCode: string;
+  _count?: { memberships: number; posts: number };
+  memberships?: Array<{ roleInClass: string }>;
+};
+
+export type ClassPost = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  author: { id: string; fullName: string; email: string };
+  attachments: Array<{ id: string; originalName: string; mimeType: string }>;
+};
+
+export type AcademicCycle = {
+  id: string;
+  name: string;
+  schoolId: string;
+  isActive: boolean;
+};
+
 const ACCESS_KEY = "sca_access_token";
 const REFRESH_KEY = "sca_refresh_token";
 const USER_KEY = "sca_user";
@@ -95,6 +121,46 @@ export async function registerRequest(input: {
   role: "TEACHER" | "STUDENT" | "PARENT";
 }) {
   return apiPost<AuthResponse>("/auth/register", input);
+}
+
+export async function listClasses(token: string) {
+  return apiGet<Classroom[]>("/classes", token);
+}
+
+export async function createClass(
+  token: string,
+  input: {
+    name: string;
+    cycleId: string;
+    section?: string;
+    subject?: string;
+  },
+) {
+  return apiPost<Classroom>("/classes", input, token);
+}
+
+export async function joinClass(token: string, joinCode: string) {
+  return apiPost<{ class: Classroom }>("/classes/join", { joinCode }, token);
+}
+
+export async function getClass(token: string, id: string) {
+  return apiGet<Classroom & { joinCode: string }>("/classes/" + id, token);
+}
+
+export async function listPosts(token: string, classId: string) {
+  return apiGet<ClassPost[]>(`/classes/${classId}/posts`, token);
+}
+
+export async function createPost(
+  token: string,
+  classId: string,
+  input: { title: string; body: string; attachmentIds?: string[] },
+) {
+  return apiPost<ClassPost>(`/classes/${classId}/posts`, input, token);
+}
+
+export async function listCycles(token: string) {
+  return apiGet<AcademicCycle[]>("/cycles", token);
 }
 
 export async function getHealth() {
