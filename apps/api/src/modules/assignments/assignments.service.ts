@@ -15,10 +15,14 @@ import {
   UpdateAssignmentInput,
 } from "@sca/shared";
 import { PrismaService } from "../../prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 @Injectable()
 export class AssignmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async listByClass(classId: string, userId: string, role: string) {
     await this.assertMemberOrAdmin(classId, userId, role);
@@ -142,10 +146,27 @@ export class AssignmentsService {
   async publish(id: string, userId: string, role: string) {
     const assignment = await this.getById(id, userId, role);
     await this.assertTeacherOrAdmin(assignment.classId, userId, role);
-    return this.prisma.assignment.update({
+    const updated = await this.prisma.assignment.update({
       where: { id },
       data: { publishedAt: new Date() },
     });
+
+    const students = await this.prisma.classMembership.findMany({
+      where: { classId: assignment.classId, roleInClass: RoleInClass.student },
+      select: { userId: true },
+    });
+    void this.notifications.notifyMany(
+      students.map((s) => ({
+        userId: s.userId,
+        type: "assignment.published",
+        title: `Nueva tarea: ${assignment.title}`,
+        body: `Se publicó una tarea con entrega el ${new Date(assignment.dueAt).toLocaleString("es-MX")}.`,
+        metadata: { assignmentId: assignment.id, classId: assignment.classId },
+        emailSubject: `[SCA] Nueva tarea: ${assignment.title}`,
+      })),
+    );
+
+    return updated;
   }
 
   async remove(id: string, userId: string, role: string) {

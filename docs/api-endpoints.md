@@ -178,6 +178,9 @@ Leyenda de roles: **A** Admin · **T** Teacher · **S** Student · **P** Parent 
 
 | Método | Ruta | Roles | Descripción |
 |--------|------|-------|-------------|
+| GET | `/admin/smtp` | A | Lee settings SMTP (sin password; `hasPassword`) |
+| PUT | `/admin/smtp` | A | Crea/actualiza SMTP (password cifrado; vacío = conservar) |
+| POST | `/admin/smtp/test` | A | Envía correo de prueba `{ to }` |
 | GET | `/admin/stats` | A | Conteos usuarios/clases/entregas |
 | POST | `/admin/users/invite` | A | Alta asistida (opcional fase 6) |
 

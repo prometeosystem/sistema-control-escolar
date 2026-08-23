@@ -87,6 +87,8 @@ model User {
   createdExams       Exam[]             @relation("ExamCreator")
   examAudience       ExamAudience[]
   examAttempts       ExamAttempt[]
+  notifications      Notification[]
+  emailLogs          EmailLog[]
 
   @@index([schoolId])
   @@index([role])
@@ -418,4 +420,57 @@ model ExamAnswer {
   createdAt      DateTime     @default(now())
 
   @@unique([attemptId, questionId])
+}
+
+enum EmailStatus {
+  sent
+  failed
+  skipped
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String
+  metadata  Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt, createdAt])
+}
+
+model EmailLog {
+  id                String      @id @default(uuid())
+  userId            String?
+  user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  to                String
+  subject           String
+  template          String
+  status            EmailStatus
+  providerMessageId String?
+  error             String?
+  createdAt         DateTime    @default(now())
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+/// Configuración SMTP editable por ADMIN desde el frontend (password cifrado).
+model SmtpSettings {
+  id                   String   @id @default(uuid())
+  enabled              Boolean  @default(false)
+  host                 String
+  port                 Int      @default(587)
+  secure               Boolean  @default(false)
+  username             String?
+  /// AES-256-GCM cifrado con SETTINGS_ENCRYPTION_KEY
+  passwordEncrypted    String?
+  fromEmail            String
+  fromName             String   @default("SCA")
+  updatedById          String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }

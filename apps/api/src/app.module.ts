@@ -12,6 +12,9 @@ import { PostsModule } from "./modules/posts/posts.module";
 import { SchoolsModule } from "./modules/schools/schools.module";
 import { SubmissionsModule } from "./modules/submissions/submissions.module";
 import { UsersModule } from "./modules/users/users.module";
+import { MailModule } from "./modules/mail/mail.module";
+import { SmtpSettingsModule } from "./modules/mail/smtp-settings.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { PrismaModule } from "./prisma/prisma.module";
 
 @Module({
@@ -29,6 +32,9 @@ import { PrismaModule } from "./prisma/prisma.module";
     SubmissionsModule,
     GradesModule,
     ExamsModule,
+    MailModule,
+    SmtpSettingsModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
 })

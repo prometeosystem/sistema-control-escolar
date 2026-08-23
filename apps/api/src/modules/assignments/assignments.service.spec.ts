@@ -17,7 +17,11 @@ describe("AssignmentsService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AssignmentsService(prisma as never);
+    const notifications = {
+      notify: jest.fn(),
+      notifyMany: jest.fn().mockResolvedValue([]),
+    };
+    service = new AssignmentsService(prisma as never, notifications as never);
   });
 
   it("bloquea crear tarea si no es profesor", async () => {

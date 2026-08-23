@@ -110,6 +110,40 @@ export async function apiGet<T>(path: string, token: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export async function apiPut<T>(
+  path: string,
+  body: unknown,
+  token: string,
+): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json() as Promise<T>;
+}
+
+export async function apiPatch<T>(
+  path: string,
+  body: unknown,
+  token: string,
+): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json() as Promise<T>;
+}
+
 export async function loginRequest(email: string, password: string) {
   return apiPost<AuthResponse>("/auth/login", { email, password });
 }
@@ -327,4 +361,88 @@ export async function getHealth() {
   const res = await fetch(`${API_URL}/health`, { cache: "no-store" });
   if (!res.ok) throw new Error("API health check failed");
   return res.json() as Promise<{ status: string; service: string; phase: number }>;
+}
+
+export type SmtpPublicSettings = {
+  configured: boolean;
+  enabled: boolean;
+  host: string;
+  port: number;
+  secure: boolean;
+  username: string;
+  fromEmail: string;
+  fromName: string;
+  hasPassword: boolean;
+  sourceHint?: string;
+  updatedAt?: string;
+};
+
+export type NotificationItem = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type NotificationsPage = {
+  data: NotificationItem[];
+  meta: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    unreadCount: number;
+  };
+};
+
+export async function getSmtpSettings(token: string) {
+  return apiGet<SmtpPublicSettings>("/admin/smtp", token);
+}
+
+export async function updateSmtpSettings(
+  token: string,
+  input: {
+    enabled: boolean;
+    host: string;
+    port: number;
+    secure: boolean;
+    username?: string | null;
+    password?: string | null;
+    fromEmail: string;
+    fromName: string;
+  },
+) {
+  return apiPut<SmtpPublicSettings>("/admin/smtp", input, token);
+}
+
+export async function testSmtp(token: string, to: string) {
+  return apiPost<{ ok: boolean; skipped?: boolean; messageId?: string }>(
+    "/admin/smtp/test",
+    { to },
+    token,
+  );
+}
+
+export async function listNotifications(
+  token: string,
+  opts?: { unreadOnly?: boolean; page?: number },
+) {
+  const q = new URLSearchParams();
+  if (opts?.unreadOnly) q.set("unreadOnly", "true");
+  if (opts?.page) q.set("page", String(opts.page));
+  const qs = q.toString();
+  return apiGet<NotificationsPage>(
+    `/notifications${qs ? `?${qs}` : ""}`,
+    token,
+  );
+}
+
+export async function markNotificationRead(token: string, id: string) {
+  return apiPatch(`/notifications/${id}/read`, {}, token);
+}
+
+export async function markAllNotificationsRead(token: string) {
+  return apiPost("/notifications/read-all", {}, token);
 }

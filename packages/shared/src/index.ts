@@ -6,3 +6,4 @@ export * from "./classes";
 export * from "./files";
 export * from "./assignments";
 export * from "./exams";
+export * from "./notifications";
