@@ -1,5 +1,4 @@
-// Fase 1: auth, usuarios, escuela, ciclos.
-// El resto del dominio se agrega en fases posteriores (docs/diagrama-er.md).
+// Fase 2: clases, memberships, muro (posts) y attachments (Firebase Storage).
 
 generator client {
   provider = "prisma-client-js"
@@ -17,6 +16,11 @@ enum Role {
   PARENT
 }
 
+enum RoleInClass {
+  teacher
+  student
+}
+
 model School {
   id        String          @id @default(uuid())
   name      String
@@ -24,6 +28,7 @@ model School {
   updatedAt DateTime        @updatedAt
   users     User[]
   cycles    AcademicCycle[]
+  classes   Class[]
 }
 
 model AcademicCycle {
@@ -36,23 +41,27 @@ model AcademicCycle {
   isActive  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  classes   Class[]
 
   @@index([schoolId])
 }
 
 model User {
-  id            String         @id @default(uuid())
+  id            String             @id @default(uuid())
   schoolId      String?
-  school        School?        @relation(fields: [schoolId], references: [id], onDelete: SetNull)
-  email         String         @unique
+  school        School?            @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  email         String             @unique
   passwordHash  String
   role          Role
   fullName      String
-  emailNotify   Boolean        @default(true)
-  inAppNotify   Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  emailNotify   Boolean            @default(true)
+  inAppNotify   Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
   refreshTokens RefreshToken[]
+  memberships   ClassMembership[]
+  posts         Post[]
+  attachments   Attachment[]
 
   @@index([schoolId])
   @@index([role])
@@ -69,4 +78,70 @@ model RefreshToken {
 
   @@index([userId])
   @@index([tokenHash])
+}
+
+model Class {
+  id          String            @id @default(uuid())
+  schoolId    String
+  school      School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  cycleId     String
+  cycle       AcademicCycle     @relation(fields: [cycleId], references: [id], onDelete: Restrict)
+  name        String
+  section     String?
+  subject     String?
+  joinCode    String            @unique
+  archivedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  memberships ClassMembership[]
+  posts       Post[]
+
+  @@index([schoolId])
+  @@index([cycleId])
+}
+
+model ClassMembership {
+  id          String      @id @default(uuid())
+  classId     String
+  class       Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleInClass RoleInClass
+  createdAt   DateTime    @default(now())
+
+  @@unique([classId, userId])
+  @@index([userId])
+}
+
+model Post {
+  id          String       @id @default(uuid())
+  classId     String
+  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title       String
+  body        String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  attachments Attachment[]
+
+  @@index([classId, createdAt])
+}
+
+model Attachment {
+  id           String   @id @default(uuid())
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  storagePath  String
+  bucket       String
+  mimeType     String
+  size         Int
+  originalName String
+  postId       String?
+  post         Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  @@unique([storagePath])
+  @@index([postId])
+  @@index([uploadedById])
 }

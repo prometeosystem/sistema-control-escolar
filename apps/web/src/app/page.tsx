@@ -18,7 +18,7 @@ export default function HomePage() {
           Crear cuenta
         </Link>
       </div>
-      <p className={styles.meta}>Fase 1 — autenticación, usuarios, escuela y roles</p>
+      <p className={styles.meta}>Fase 2 — clases, muro y archivos</p>
     </main>
   );
 }
