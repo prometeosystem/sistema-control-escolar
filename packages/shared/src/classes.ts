@@ -34,19 +34,3 @@ export type CreatePostInput = z.infer<typeof CreatePostSchema>;
 
 export const UpdatePostSchema = CreatePostSchema.partial();
 export type UpdatePostInput = z.infer<typeof UpdatePostSchema>;
-
-export const PresignFileSchema = z.object({
-  originalName: z.string().min(1),
-  mimeType: z.string().min(3),
-  size: z.number().int().positive().max(25 * 1024 * 1024),
-  purpose: z.enum(["post", "assignment", "submission", "other"]).default("other"),
-});
-export type PresignFileInput = z.infer<typeof PresignFileSchema>;
-
-export const ConfirmFileSchema = z.object({
-  storagePath: z.string().min(3),
-  originalName: z.string().min(1),
-  mimeType: z.string().min(3),
-  size: z.number().int().positive().max(25 * 1024 * 1024),
-});
-export type ConfirmFileInput = z.infer<typeof ConfirmFileSchema>;

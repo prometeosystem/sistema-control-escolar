@@ -80,7 +80,7 @@ gh pr create --base develop --title "feat: mi cambio"
 | 0 | Hecha | Docs + scaffold |
 | 1 | Hecha | Auth + usuarios + escuela + roles |
 | 2 | Hecha | Clases + muro + Firebase Storage |
-| 3 | Pendiente | Tareas / equipos / entregas / grades |
+| 3 | Hecha | Tareas / equipos / entregas / grades |
 | 4 | Pendiente | Exámenes |
 | 5 | Pendiente | Notificaciones + SMTP |
 | 6 | Pendiente | Padres + admin + pulido UX |
@@ -95,7 +95,11 @@ pnpm test
 - `@sca/api` — Jest (health + AuthService)
 - `@sca/web` — Vitest (api-client)
 
-## Credenciales seed (solo local)
+## Adjuntos (Fase 3)
+
+- Tipos: **PDF**, **DOC/DOCX**, **imágenes** (jpeg/png/gif/webp) y **links** http/https
+- Tamaño máximo por archivo: **10 MB** (límite práctico para secundaria; configurable en `MAX_UPLOAD_BYTES`)
+
 
 Definí `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD` en tu `.env` (ver `.env.example`).  
 **Nunca** uses esas credenciales en producción ni subas un `.env` real.

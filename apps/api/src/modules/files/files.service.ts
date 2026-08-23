@@ -1,9 +1,15 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { ConfirmFileInput, PresignFileInput } from "@sca/shared";
+import { AttachmentKind } from "@prisma/client";
+import {
+  ConfirmFileInput,
+  CreateLinkAttachmentInput,
+  PresignFileInput,
+} from "@sca/shared";
 import { PrismaService } from "../../prisma/prisma.service";
 import { StorageService } from "./storage.service";
 
@@ -37,6 +43,7 @@ export class FilesService {
 
     return this.prisma.attachment.create({
       data: {
+        kind: AttachmentKind.file,
         uploadedById: userId,
         storagePath: input.storagePath,
         bucket: this.storage.getBucketName(),
@@ -47,15 +54,51 @@ export class FilesService {
     });
   }
 
+  async createLink(userId: string, input: CreateLinkAttachmentInput) {
+    try {
+      // Validate URL shape already done by Zod; block javascript: etc.
+      const url = new URL(input.url);
+      if (!["http:", "https:"].includes(url.protocol)) {
+        throw new BadRequestException("Solo se permiten links http/https");
+      }
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e;
+      throw new BadRequestException("URL inválida");
+    }
+
+    return this.prisma.attachment.create({
+      data: {
+        kind: AttachmentKind.link,
+        uploadedById: userId,
+        externalUrl: input.url,
+        mimeType: "text/uri-list",
+        size: 0,
+        originalName: input.title,
+      },
+    });
+  }
+
   async getForUser(fileId: string, userId: string, role: string) {
     const file = await this.prisma.attachment.findUnique({
       where: { id: fileId },
-      include: { post: true },
+      include: {
+        post: true,
+        assignment: true,
+        submission: { include: { assignment: true } },
+      },
     });
     if (!file) throw new NotFoundException("Archivo no encontrado");
 
     const allowed = await this.canAccess(file, userId, role);
     if (!allowed) throw new ForbiddenException("Sin acceso al archivo");
+
+    if (file.kind === AttachmentKind.link) {
+      return { ...file, downloadUrl: file.externalUrl };
+    }
+
+    if (!file.storagePath) {
+      throw new NotFoundException("Archivo sin path de storage");
+    }
 
     const downloadUrl = await this.storage.getSignedDownloadUrl(file.storagePath);
     return { ...file, downloadUrl };
@@ -69,7 +112,9 @@ export class FilesService {
       throw new ForbiddenException("Solo el dueño o admin puede borrar");
     }
 
-    await this.storage.delete(file.storagePath);
+    if (file.kind === AttachmentKind.file && file.storagePath) {
+      await this.storage.delete(file.storagePath);
+    }
     await this.prisma.attachment.delete({ where: { id: fileId } });
     return { ok: true };
   }
@@ -78,17 +123,25 @@ export class FilesService {
     file: {
       uploadedById: string;
       postId: string | null;
+      assignmentId: string | null;
+      submissionId: string | null;
       post: { classId: string } | null;
+      assignment: { classId: string } | null;
+      submission: { assignment: { classId: string } } | null;
     },
     userId: string,
     role: string,
   ) {
     if (role === "ADMIN" || file.uploadedById === userId) return true;
-    if (!file.postId || !file.post) return false;
+
+    const classId =
+      file.post?.classId ??
+      file.assignment?.classId ??
+      file.submission?.assignment.classId;
+    if (!classId) return false;
+
     const membership = await this.prisma.classMembership.findUnique({
-      where: {
-        classId_userId: { classId: file.post.classId, userId },
-      },
+      where: { classId_userId: { classId, userId } },
     });
     return Boolean(membership);
   }
