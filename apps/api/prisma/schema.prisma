@@ -1,4 +1,4 @@
-// Fase 2: clases, memberships, muro (posts) y attachments (Firebase Storage).
+// Fase 3: tareas, equipos, entregas, calificaciones y adjuntos (archivo/link).
 
 generator client {
   provider = "prisma-client-js"
@@ -19,6 +19,23 @@ enum Role {
 enum RoleInClass {
   teacher
   student
+}
+
+enum AssignmentMode {
+  individual
+  team
+}
+
+enum SubmissionStatus {
+  draft
+  submitted
+  graded
+  returned
+}
+
+enum AttachmentKind {
+  file
+  link
 }
 
 model School {
@@ -47,21 +64,26 @@ model AcademicCycle {
 }
 
 model User {
-  id            String             @id @default(uuid())
-  schoolId      String?
-  school        School?            @relation(fields: [schoolId], references: [id], onDelete: SetNull)
-  email         String             @unique
-  passwordHash  String
-  role          Role
-  fullName      String
-  emailNotify   Boolean            @default(true)
-  inAppNotify   Boolean            @default(true)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  refreshTokens RefreshToken[]
-  memberships   ClassMembership[]
-  posts         Post[]
-  attachments   Attachment[]
+  id                 String             @id @default(uuid())
+  schoolId           String?
+  school             School?            @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  email              String             @unique
+  passwordHash       String
+  role               Role
+  fullName           String
+  emailNotify        Boolean            @default(true)
+  inAppNotify        Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  refreshTokens      RefreshToken[]
+  memberships        ClassMembership[]
+  posts              Post[]
+  attachments        Attachment[]
+  createdAssignments Assignment[]       @relation("AssignmentCreator")
+  submissions        Submission[]
+  teamMemberships    TeamMember[]
+  gradesReceived     Grade[]            @relation("GradeStudent")
+  gradesGiven        Grade[]            @relation("GradeTeacher")
 
   @@index([schoolId])
   @@index([role])
@@ -95,6 +117,7 @@ model Class {
   updatedAt   DateTime          @updatedAt
   memberships ClassMembership[]
   posts       Post[]
+  assignments Assignment[]
 
   @@index([schoolId])
   @@index([cycleId])
@@ -128,20 +151,114 @@ model Post {
   @@index([classId, createdAt])
 }
 
+model Assignment {
+  id          String         @id @default(uuid())
+  classId     String
+  class       Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User           @relation("AssignmentCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  mode        AssignmentMode @default(individual)
+  dueAt       DateTime
+  maxScore    Decimal        @db.Decimal(8, 2)
+  publishedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  teams       Team[]
+  submissions Submission[]
+  grades      Grade[]
+  attachments Attachment[]
+
+  @@index([classId, dueAt])
+}
+
+model Team {
+  id           String       @id @default(uuid())
+  assignmentId String
+  assignment   Assignment   @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  name         String
+  createdAt    DateTime     @default(now())
+  members      TeamMember[]
+  submissions  Submission[]
+
+  @@unique([assignmentId, name])
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model Submission {
+  id           String           @id @default(uuid())
+  assignmentId String
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId    String?
+  student      User?            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teamId       String?
+  team         Team?            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  status       SubmissionStatus @default(draft)
+  content      String?
+  submittedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  attachments  Attachment[]
+  grade        Grade?
+
+  @@index([assignmentId])
+  @@index([studentId])
+  @@index([teamId])
+}
+
+model Grade {
+  id           String      @id @default(uuid())
+  studentId    String
+  student      User        @relation("GradeStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  assignmentId String?
+  assignment   Assignment? @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  submissionId String?     @unique
+  submission   Submission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  score        Decimal     @db.Decimal(8, 2)
+  maxScore     Decimal     @db.Decimal(8, 2)
+  feedback     String?
+  gradedById   String
+  gradedBy     User        @relation("GradeTeacher", fields: [gradedById], references: [id], onDelete: Cascade)
+  gradedAt     DateTime    @default(now())
+
+  @@index([studentId])
+  @@index([assignmentId])
+}
+
 model Attachment {
-  id           String   @id @default(uuid())
+  id           String         @id @default(uuid())
   uploadedById String
-  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
-  storagePath  String
-  bucket       String
+  uploadedBy   User           @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  kind         AttachmentKind @default(file)
+  storagePath  String?
+  bucket       String?
+  externalUrl  String?
   mimeType     String
-  size         Int
+  size         Int            @default(0)
   originalName String
   postId       String?
-  post         Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
-  createdAt    DateTime @default(now())
+  post         Post?          @relation(fields: [postId], references: [id], onDelete: SetNull)
+  assignmentId String?
+  assignment   Assignment?    @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  submissionId String?
+  submission   Submission?    @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  createdAt    DateTime       @default(now())
 
   @@unique([storagePath])
   @@index([postId])
+  @@index([assignmentId])
+  @@index([submissionId])
   @@index([uploadedById])
 }

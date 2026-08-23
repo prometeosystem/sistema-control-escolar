@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { CreateClassSchema, JoinClassSchema, PresignFileSchema } from "./classes";
+import { CreateClassSchema, JoinClassSchema } from "./classes";
+import { PresignFileSchema } from "./assignments";
+import { MAX_UPLOAD_BYTES, isAllowedFileMime } from "./files";
 
 describe("CreateClassSchema", () => {
   it("valida clase", () => {
@@ -20,13 +22,41 @@ describe("JoinClassSchema", () => {
 });
 
 describe("PresignFileSchema", () => {
-  it("limita tamaño", () => {
+  it("acepta PDF dentro de 10MB", () => {
+    const data = PresignFileSchema.parse({
+      originalName: "tarea.pdf",
+      mimeType: "application/pdf",
+      size: 1024,
+      purpose: "submission",
+    });
+    expect(data.mimeType).toBe("application/pdf");
+  });
+
+  it("rechaza tamaño > 10MB", () => {
     expect(() =>
       PresignFileSchema.parse({
         originalName: "a.pdf",
         mimeType: "application/pdf",
-        size: 50 * 1024 * 1024,
+        size: MAX_UPLOAD_BYTES + 1,
       }),
     ).toThrow();
+  });
+
+  it("rechaza mime no permitido", () => {
+    expect(() =>
+      PresignFileSchema.parse({
+        originalName: "a.exe",
+        mimeType: "application/x-msdownload",
+        size: 100,
+      }),
+    ).toThrow();
+  });
+});
+
+describe("isAllowedFileMime", () => {
+  it("permite imágenes y docs", () => {
+    expect(isAllowedFileMime("image/png")).toBe(true);
+    expect(isAllowedFileMime("application/pdf")).toBe(true);
+    expect(isAllowedFileMime("text/plain")).toBe(false);
   });
 });

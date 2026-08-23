@@ -74,9 +74,14 @@ export default function ClassDetailPage() {
             </p>
           ) : null}
         </div>
-        <Link className={styles.ghost} href="/classes">
-          Todas las clases
-        </Link>
+        <div className={styles.actions}>
+          <Link className={styles.button} href={`/classes/${params.id}/assignments`}>
+            Tareas
+          </Link>
+          <Link className={styles.ghost} href="/classes">
+            Todas las clases
+          </Link>
+        </div>
       </header>
 
       {error ? (

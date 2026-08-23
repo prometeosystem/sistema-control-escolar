@@ -11,7 +11,7 @@ describe("HealthController", () => {
     expect(controller.check()).toEqual({
       status: "ok",
       service: "sca-api",
-      phase: 2,
+      phase: 3,
     });
   });
 });

@@ -7,7 +7,11 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { ConfirmFileSchema, PresignFileSchema } from "@sca/shared";
+import {
+  ConfirmFileSchema,
+  CreateLinkAttachmentSchema,
+  PresignFileSchema,
+} from "@sca/shared";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard, JwtPayload } from "../../common/guards/jwt-auth.guard";
 import { FilesService } from "./files.service";
@@ -27,6 +31,12 @@ export class FilesController {
   confirm(@CurrentUser() user: JwtPayload, @Body() body: unknown) {
     const input = ConfirmFileSchema.parse(body);
     return this.files.confirm(user.sub, input);
+  }
+
+  @Post("link")
+  createLink(@CurrentUser() user: JwtPayload, @Body() body: unknown) {
+    const input = CreateLinkAttachmentSchema.parse(body);
+    return this.files.createLink(user.sub, input);
   }
 
   @Get(":id")

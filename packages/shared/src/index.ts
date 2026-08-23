@@ -3,3 +3,5 @@ export * from "./auth";
 export * from "./common";
 export * from "./users";
 export * from "./classes";
+export * from "./files";
+export * from "./assignments";

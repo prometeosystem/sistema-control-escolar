@@ -163,6 +163,100 @@ export async function listCycles(token: string) {
   return apiGet<AcademicCycle[]>("/cycles", token);
 }
 
+export type Assignment = {
+  id: string;
+  title: string;
+  description: string;
+  mode: "individual" | "team";
+  dueAt: string;
+  maxScore: string | number;
+  publishedAt: string | null;
+  attachments?: Array<{
+    id: string;
+    kind: string;
+    originalName: string;
+    externalUrl?: string | null;
+    mimeType: string;
+  }>;
+};
+
+export type Submission = {
+  id: string;
+  status: string;
+  content: string | null;
+  submittedAt: string | null;
+  attachments?: Array<{
+    id: string;
+    kind: string;
+    originalName: string;
+    externalUrl?: string | null;
+  }>;
+  grade?: { score: string | number; feedback: string | null } | null;
+  student?: { id: string; fullName: string } | null;
+};
+
+export async function listAssignments(token: string, classId: string) {
+  return apiGet<Assignment[]>(`/classes/${classId}/assignments`, token);
+}
+
+export async function createAssignment(
+  token: string,
+  classId: string,
+  input: {
+    title: string;
+    description: string;
+    mode: "individual" | "team";
+    dueAt: string;
+    maxScore: number;
+    linkAttachments?: Array<{ url: string; title: string }>;
+  },
+) {
+  return apiPost<Assignment>(`/classes/${classId}/assignments`, input, token);
+}
+
+export async function publishAssignment(token: string, id: string) {
+  return apiPost<Assignment>(`/assignments/${id}/publish`, {}, token);
+}
+
+export async function getAssignment(token: string, id: string) {
+  return apiGet<Assignment>(`/assignments/${id}`, token);
+}
+
+export async function submitAssignment(
+  token: string,
+  id: string,
+  input: {
+    content?: string;
+    attachmentIds?: string[];
+    linkAttachments?: Array<{ url: string; title: string }>;
+  },
+) {
+  return apiPost<Submission>(`/assignments/${id}/submit`, input, token);
+}
+
+export async function mySubmission(token: string, id: string) {
+  return apiGet<Submission | null>(`/assignments/${id}/submissions/me`, token);
+}
+
+export async function listSubmissions(token: string, id: string) {
+  return apiGet<Submission[]>(`/assignments/${id}/submissions`, token);
+}
+
+export async function gradeSubmission(
+  token: string,
+  submissionId: string,
+  input: { score: number; feedback?: string },
+) {
+  return apiPost(`/submissions/${submissionId}/grade`, input, token);
+}
+
+export async function createLinkAttachment(
+  token: string,
+  input: { url: string; title: string; purpose?: string },
+) {
+  return apiPost<{ id: string }>("/files/link", input, token);
+}
+
 export async function getHealth() {
   const res = await fetch(`${API_URL}/health`, { cache: "no-store" });
   if (!res.ok) throw new Error("API health check failed");
