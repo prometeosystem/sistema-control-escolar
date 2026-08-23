@@ -257,6 +257,72 @@ export async function createLinkAttachment(
   return apiPost<{ id: string }>("/files/link", input, token);
 }
 
+export type ExamSummary = {
+  id: string;
+  title: string;
+  publishedAt: string | null;
+  questionsPerAttempt: number;
+  maxAttempts: number | null;
+  minPassingScore: string | number | null;
+  _count?: { questions: number; attempts: number };
+};
+
+export type ExamAttemptView = {
+  id: string;
+  attemptNo: number;
+  status: string;
+  score?: string | number;
+  maxScore?: string | number;
+  passed?: boolean | null;
+  timeLimitMin?: number | null;
+  questions: Array<{
+    questionId: string;
+    position: number;
+    type: string;
+    prompt: string;
+    points: string | number;
+    allowFileUpload: boolean;
+    options?: Array<{ id: string; text: string }>;
+    answer: {
+      value: unknown;
+      isCorrect?: boolean | null;
+      pointsAwarded?: string | number;
+    } | null;
+  }>;
+};
+
+export async function listExams(token: string, classId: string) {
+  return apiGet<ExamSummary[]>(`/classes/${classId}/exams`, token);
+}
+
+export async function createExam(
+  token: string,
+  classId: string,
+  input: Record<string, unknown>,
+) {
+  return apiPost(`/classes/${classId}/exams`, input, token);
+}
+
+export async function publishExam(token: string, id: string) {
+  return apiPost(`/exams/${id}/publish`, {}, token);
+}
+
+export async function startExam(token: string, id: string) {
+  return apiPost<ExamAttemptView>(`/exams/${id}/start`, {}, token);
+}
+
+export async function answerExam(
+  token: string,
+  attemptId: string,
+  input: { questionId: string; answer?: unknown; attachmentIds?: string[] },
+) {
+  return apiPost(`/attempts/${attemptId}/answer`, input, token);
+}
+
+export async function submitExam(token: string, attemptId: string) {
+  return apiPost<ExamAttemptView>(`/attempts/${attemptId}/submit`, {}, token);
+}
+
 export async function getHealth() {
   const res = await fetch(`${API_URL}/health`, { cache: "no-store" });
   if (!res.ok) throw new Error("API health check failed");

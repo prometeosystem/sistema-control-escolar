@@ -7,6 +7,7 @@ import { ClassesModule } from "./modules/classes/classes.module";
 import { CyclesModule } from "./modules/cycles/cycles.module";
 import { FilesModule } from "./modules/files/files.module";
 import { GradesModule } from "./modules/grades/grades.module";
+import { ExamsModule } from "./modules/exams/exams.module";
 import { PostsModule } from "./modules/posts/posts.module";
 import { SchoolsModule } from "./modules/schools/schools.module";
 import { SubmissionsModule } from "./modules/submissions/submissions.module";
@@ -27,6 +28,7 @@ import { PrismaModule } from "./prisma/prisma.module";
     AssignmentsModule,
     SubmissionsModule,
     GradesModule,
+    ExamsModule,
   ],
   controllers: [HealthController],
 })

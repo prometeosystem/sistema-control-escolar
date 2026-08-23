@@ -63,10 +63,10 @@ export default function DashboardPage() {
       </header>
       {error ? <p role="alert">{error}</p> : null}
       <section className={styles.panel}>
-        <h2>Fase 3 lista</h2>
+        <h2>Fase 4 lista</h2>
         <p className={styles.muted}>
-          Tareas individuales/equipo, entregas con links o archivos (PDF, docs,
-          imágenes ≤ 10 MB) y calificaciones.
+          Quizzes con banco aleatorio, intentos, nota mínima, archivos en
+          respuestas y hook Gemini para auto-calificación.
         </p>
         <p>
           <Link href="/classes">Ir a mis clases</Link>

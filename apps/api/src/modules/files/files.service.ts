@@ -85,6 +85,9 @@ export class FilesService {
         post: true,
         assignment: true,
         submission: { include: { assignment: true } },
+        examAnswer: {
+          include: { attempt: { include: { exam: true } } },
+        },
       },
     });
     if (!file) throw new NotFoundException("Archivo no encontrado");
@@ -125,9 +128,11 @@ export class FilesService {
       postId: string | null;
       assignmentId: string | null;
       submissionId: string | null;
+      examAnswerId: string | null;
       post: { classId: string } | null;
       assignment: { classId: string } | null;
       submission: { assignment: { classId: string } } | null;
+      examAnswer: { attempt: { exam: { classId: string } } } | null;
     },
     userId: string,
     role: string,
@@ -137,7 +142,8 @@ export class FilesService {
     const classId =
       file.post?.classId ??
       file.assignment?.classId ??
-      file.submission?.assignment.classId;
+      file.submission?.assignment.classId ??
+      file.examAnswer?.attempt.exam.classId;
     if (!classId) return false;
 
     const membership = await this.prisma.classMembership.findUnique({

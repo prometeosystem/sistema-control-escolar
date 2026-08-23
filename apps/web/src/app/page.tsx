@@ -18,7 +18,7 @@ export default function HomePage() {
           Crear cuenta
         </Link>
       </div>
-      <p className={styles.meta}>Fase 3 — tareas, entregas y calificaciones</p>
+      <p className={styles.meta}>Fase 4 — exámenes y quizzes tipo Forms</p>
     </main>
   );
 }
