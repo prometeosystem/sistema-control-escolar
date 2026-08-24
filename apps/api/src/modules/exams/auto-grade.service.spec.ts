@@ -17,6 +17,24 @@ describe("AutoGradeService", () => {
     expect(result.pointsAwarded).toBe(2);
   });
 
+  it("aplica crédito parcial por weightPercent", async () => {
+    const result = await service.gradeAnswer({
+      type: QuestionType.multiple_choice,
+      correctAnswer: { optionId: "a" },
+      answer: { optionId: "b" },
+      points: 10,
+      options: [
+        { id: "a", text: "Bien", weightPercent: 100 },
+        { id: "b", text: "Parcial", weightPercent: 50 },
+        { id: "c", text: "Mal", weightPercent: 0 },
+      ],
+      autoGradeEnabled: true,
+      provider: AutoGradeProvider.none,
+    });
+    expect(result.isCorrect).toBe(false);
+    expect(result.pointsAwarded).toBe(5);
+  });
+
   it("marca paragraph para revisión manual", async () => {
     const result = await service.gradeAnswer({
       type: QuestionType.paragraph,
