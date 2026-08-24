@@ -29,9 +29,17 @@ export type ClassPost = {
   id: string;
   title: string;
   body: string;
+  unit?: string | null;
+  dueAt?: string | null;
   createdAt: string;
   author: { id: string; fullName: string; email: string };
-  attachments: Array<{ id: string; originalName: string; mimeType: string }>;
+  attachments: Array<{
+    id: string;
+    originalName: string;
+    mimeType: string;
+    kind?: string;
+    externalUrl?: string | null;
+  }>;
 };
 
 export type AcademicCycle = {
@@ -188,9 +196,72 @@ export async function listPosts(token: string, classId: string) {
 export async function createPost(
   token: string,
   classId: string,
-  input: { title: string; body: string; attachmentIds?: string[] },
+  input: {
+    title: string;
+    body: string;
+    unit?: string;
+    dueAt?: string;
+    attachmentIds?: string[];
+    linkAttachments?: Array<{ url: string; title: string }>;
+  },
 ) {
   return apiPost<ClassPost>(`/classes/${classId}/posts`, input, token);
+}
+
+export type UploadedAttachment = {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  kind: string;
+  externalUrl?: string | null;
+};
+
+export async function uploadFileAttachment(
+  token: string,
+  file: File,
+  purpose: "post" | "assignment" | "submission" | "exam_answer" | "other" = "post",
+) {
+  const presign = await apiPost<{
+    storagePath: string;
+    uploadUrl: string;
+    mode: "firebase" | "local-dev";
+  }>(
+    "/files/presign",
+    {
+      originalName: file.name,
+      mimeType: file.type || "application/octet-stream",
+      size: file.size,
+      purpose,
+    },
+    token,
+  );
+
+  if (presign.mode === "firebase") {
+    const put = await fetch(presign.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file,
+    });
+    if (!put.ok) throw new Error("No se pudo subir el archivo");
+  }
+
+  return apiPost<UploadedAttachment>(
+    "/files/confirm",
+    {
+      storagePath: presign.storagePath,
+      originalName: file.name,
+      mimeType: file.type || "application/octet-stream",
+      size: file.size,
+    },
+    token,
+  );
+}
+
+export async function createLinkAttachment(
+  token: string,
+  input: { url: string; title: string; purpose?: string },
+) {
+  return apiPost<UploadedAttachment>("/files/link", input, token);
 }
 
 export async function listCycles(token: string) {
@@ -282,13 +353,6 @@ export async function gradeSubmission(
   input: { score: number; feedback?: string },
 ) {
   return apiPost(`/submissions/${submissionId}/grade`, input, token);
-}
-
-export async function createLinkAttachment(
-  token: string,
-  input: { url: string; title: string; purpose?: string },
-) {
-  return apiPost<{ id: string }>("/files/link", input, token);
 }
 
 export type ExamSummary = {

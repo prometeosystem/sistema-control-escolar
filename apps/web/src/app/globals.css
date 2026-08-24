@@ -1,10 +1,21 @@
 :root {
-  --bg: #0f1c18;
-  --bg-accent: #1a3229;
-  --fg: #e8f2ec;
-  --muted: #9bb5a8;
-  --accent: #3d9b6e;
-  --font-display: "Segoe UI", "Helvetica Neue", sans-serif;
+  --bg: #eef2f0;
+  --bg-elevated: #f7faf8;
+  --surface: #ffffff;
+  --ink: #14201c;
+  --ink-soft: #3d4f47;
+  --muted: #667a71;
+  --line: #d5e0da;
+  --accent: #0f6b4c;
+  --accent-soft: #d8efe5;
+  --accent-ink: #043528;
+  --warn: #9a3412;
+  --danger: #b42318;
+  --danger-soft: #fde8e6;
+  --radius: 0.75rem;
+  --shadow-soft: 0 1px 0 rgba(20, 32, 28, 0.04), 0 12px 32px rgba(20, 32, 28, 0.06);
+  --shell-width: 15.5rem;
+  --content-max: 68rem;
 }
 
 * {
@@ -15,14 +26,42 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  font-family: var(--font-display);
-  color: var(--fg);
-  background:
-    radial-gradient(1200px 600px at 10% -10%, #244c3a 0%, transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, #1e3a55 0%, transparent 50%),
-    var(--bg);
+  font-family: var(--font-sans), "Sora", sans-serif;
+  color: var(--ink);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(15, 107, 76, 0.08), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(30, 90, 120, 0.07), transparent 50%),
+    linear-gradient(180deg, #e8eeea 0%, var(--bg) 28%, #e9efec 100%);
+  background-attachment: fixed;
+}
+
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
   color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+.brand-display {
+  font-family: var(--font-display), "Fraunces", serif;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }

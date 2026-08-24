@@ -4,6 +4,8 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginRequest, saveSession } from "@/shared/api-client";
+import { PasswordField } from "@/shared/ui/PasswordField";
+import { Loader } from "@/shared/ui/Loader";
 import styles from "./auth.module.css";
 
 export function LoginForm() {
@@ -23,9 +25,12 @@ export function LoginForm() {
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo iniciar sesión");
-    } finally {
       setLoading(false);
     }
+  }
+
+  if (loading) {
+    return <Loader label="Iniciando sesión…" />;
   }
 
   return (
@@ -41,24 +46,20 @@ export function LoginForm() {
           required
         />
       </label>
-      <label className={styles.label}>
-        Contraseña
-        <input
-          className={styles.input}
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </label>
+      <PasswordField
+        label="Contraseña"
+        autoComplete="current-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
       {error ? (
         <p className={styles.error} role="alert">
           {error}
         </p>
       ) : null}
-      <button className={styles.button} type="submit" disabled={loading}>
-        {loading ? "Entrando…" : "Entrar"}
+      <button className={styles.button} type="submit">
+        Entrar
       </button>
       <p className={styles.hint}>
         ¿No tenés cuenta? <Link href="/register">Registrate</Link>

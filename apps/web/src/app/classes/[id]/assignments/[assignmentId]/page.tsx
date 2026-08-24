@@ -14,6 +14,7 @@ import {
   mySubmission,
   submitAssignment,
 } from "@/shared/api-client";
+import { AppShell } from "@/shared/ui/AppShell";
 import styles from "@/features/classes/classes.module.css";
 
 export default function AssignmentDetailPage() {
@@ -29,6 +30,7 @@ export default function AssignmentDetailPage() {
   const [linkTitle, setLinkTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -47,7 +49,8 @@ export default function AssignmentDetailPage() {
       })
       .catch((err) =>
         setError(err instanceof Error ? err.message : "No se pudo cargar"),
-      );
+      )
+      .finally(() => setPageLoading(false));
   }, [params.assignmentId, router, isTeacher]);
 
   async function onSubmit(e: FormEvent) {
@@ -87,26 +90,24 @@ export default function AssignmentDetailPage() {
   }
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.brand}>SCA</p>
-          <h1 className={styles.title}>{assignment?.title ?? "Tarea"}</h1>
-          {assignment ? (
-            <p className={styles.muted}>
-              Entrega hasta {new Date(assignment.dueAt).toLocaleString("es-MX")}{" "}
-              · {assignment.maxScore} pts · {assignment.mode}
-            </p>
-          ) : null}
-        </div>
+    <AppShell
+      title={assignment?.title ?? "Tarea"}
+      lead={
+        assignment
+          ? `Entrega hasta ${new Date(assignment.dueAt).toLocaleString("es-MX")} · ${assignment.maxScore} pts · ${assignment.mode}`
+          : undefined
+      }
+      loading={pageLoading}
+      loadingLabel="Cargando tarea…"
+      actions={
         <Link
           className={styles.ghost}
           href={`/classes/${params.id}/assignments`}
         >
           Volver a tareas
         </Link>
-      </header>
-
+      }
+    >
       {error ? (
         <p className={styles.error} role="alert">
           {error}
@@ -226,6 +227,6 @@ export default function AssignmentDetailPage() {
           )}
         </section>
       )}
-    </main>
+    </AppShell>
   );
 }

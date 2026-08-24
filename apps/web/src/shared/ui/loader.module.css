@@ -1,0 +1,119 @@
+/* Basado en uiverse.io/andrew-manzyk/young-walrus-64 (MIT) */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
+  padding: 2rem;
+}
+
+.full {
+  min-height: min(50vh, 24rem);
+  width: 100%;
+}
+
+.fullScreen {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.inline {
+  min-height: 8rem;
+}
+
+.label {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.loader {
+  --color-one: #4fd1a0;
+  --color-two: #0f6b4c;
+  --color-three: #4fd1a080;
+  --color-four: #0f6b4c80;
+  --color-five: #4fd1a040;
+  --time-animation: 2s;
+  --size: 1;
+  width: 100px;
+  height: 100px;
+  position: relative;
+  border-radius: 50%;
+  transform: scale(var(--size));
+  box-shadow:
+    0 0 25px 0 var(--color-three),
+    0 20px 50px 0 var(--color-four);
+  animation: colorize calc(var(--time-animation) * 3) ease-in-out infinite;
+}
+
+.loader::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 32%,
+    var(--color-one) 0%,
+    var(--color-two) 72%
+  );
+  box-shadow: inset 0 -12px 24px 0 var(--color-five);
+  animation: breathe var(--time-animation) ease-in-out infinite;
+}
+
+.loader::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  left: 24px;
+  right: 24px;
+  bottom: 34px;
+  border-radius: 50% 50% 46% 46% / 68% 68% 32% 32%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(255, 255, 255, 0) 72%
+  );
+  filter: blur(5px);
+  animation: breathe var(--time-animation) ease-in-out infinite reverse;
+}
+
+.sizeSm {
+  --size: 0.55;
+}
+
+/* El original gira 180° de matiz; acá lo acotamos a verde–turquesa para que el
+   destello no se salga de la paleta del sistema. */
+@keyframes colorize {
+  0%,
+  100% {
+    filter: hue-rotate(-14deg);
+  }
+  50% {
+    filter: hue-rotate(26deg);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.82;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader,
+  .loader::before,
+  .loader::after {
+    animation-duration: 6s;
+  }
+}

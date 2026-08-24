@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { API_URL, getAccessToken } from "@/shared/api-client";
+import { AppShell } from "@/shared/ui/AppShell";
 import styles from "@/features/classes/classes.module.css";
 
 type ResultRow = {
@@ -20,6 +21,7 @@ export default function ExamResultsPage() {
   const router = useRouter();
   const [rows, setRows] = useState<ResultRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -37,20 +39,21 @@ export default function ExamResultsPage() {
       .then(setRows)
       .catch((err) =>
         setError(err instanceof Error ? err.message : "Error al cargar"),
-      );
+      )
+      .finally(() => setPageLoading(false));
   }, [params.examId, router]);
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.brand}>SCA</p>
-          <h1 className={styles.title}>Resultados del examen</h1>
-        </div>
+    <AppShell
+      title="Resultados del examen"
+      loading={pageLoading}
+      loadingLabel="Cargando resultados…"
+      actions={
         <Link className={styles.ghost} href={`/classes/${params.id}/exams`}>
           Volver
         </Link>
-      </header>
+      }
+    >
       {error ? <p className={styles.error}>{error}</p> : null}
       <ul className={styles.list}>
         {rows.map((r) => (
@@ -63,6 +66,6 @@ export default function ExamResultsPage() {
           </li>
         ))}
       </ul>
-    </main>
+    </AppShell>
   );
 }

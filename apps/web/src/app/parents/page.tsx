@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AuthUser,
@@ -15,7 +15,15 @@ import {
   rejectParentLink,
   requestParentLink,
 } from "@/shared/api-client";
+import { AppShell } from "@/shared/ui/AppShell";
+import { Modal } from "@/shared/ui/Modal";
 import styles from "@/features/classes/classes.module.css";
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Pendiente",
+  approved: "Aprobado",
+  rejected: "Rechazado",
+};
 
 export default function ParentsPage() {
   const router = useRouter();
@@ -26,6 +34,12 @@ export default function ParentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [childSearch, setChildSearch] = useState("");
+  const [requestSearch, setRequestSearch] = useState("");
+  const [requestStatus, setRequestStatus] = useState("pending");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   async function reload(token: string, role: string) {
     const reqs = await listParentLinkRequests(token);
@@ -47,25 +61,65 @@ export default function ParentsPage() {
       return;
     }
     setUser(stored);
-    reload(token, stored.role).catch((err) =>
-      setError(err instanceof Error ? err.message : "Error al cargar"),
-    );
+    if (stored.role === "STUDENT") setRequestStatus("pending");
+    reload(token, stored.role)
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : "Error al cargar"),
+      )
+      .finally(() => setPageLoading(false));
   }, [router]);
+
+  const filteredChildren = useMemo(() => {
+    const q = childSearch.trim().toLowerCase();
+    if (!q) return children;
+    return children.filter(
+      (c) =>
+        c.fullName.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q),
+    );
+  }, [children, childSearch]);
+
+  const filteredRequests = useMemo(() => {
+    const q = requestSearch.trim().toLowerCase();
+    return requests.filter((r) => {
+      if (requestStatus && r.status !== requestStatus) return false;
+      if (!q) return true;
+      return (
+        r.parent.fullName.toLowerCase().includes(q) ||
+        r.parent.email.toLowerCase().includes(q) ||
+        r.student.fullName.toLowerCase().includes(q) ||
+        r.student.email.toLowerCase().includes(q)
+      );
+    });
+  }, [requests, requestSearch, requestStatus]);
+
+  function openModal() {
+    setFormError(null);
+    setError(null);
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    setModalOpen(false);
+    setFormError(null);
+    setStudentEmail("");
+  }
 
   async function onRequest(e: FormEvent) {
     e.preventDefault();
     const token = getAccessToken();
     if (!token) return;
     setLoading(true);
+    setFormError(null);
     setError(null);
     setMessage(null);
     try {
       await requestParentLink(token, studentEmail);
       setMessage("Solicitud enviada. El alumno debe aprobarla.");
-      setStudentEmail("");
+      closeModal();
       await reload(token, user?.role ?? "PARENT");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo enviar");
+      setFormError(err instanceof Error ? err.message : "No se pudo enviar");
     } finally {
       setLoading(false);
     }
@@ -87,114 +141,226 @@ export default function ParentsPage() {
 
   if (!user) {
     return (
-      <main className={styles.page}>
-        <p className={styles.muted}>Cargando…</p>
-      </main>
+      <AppShell title="Padres y tutores" loading loadingLabel="Cargando…">
+        {null}
+      </AppShell>
     );
   }
 
-  const pending = requests.filter((r) => r.status === "pending");
+  const canManageLinks = user.role === "PARENT" || user.role === "ADMIN";
+  const canReviewRequests = user.role === "STUDENT" || user.role === "ADMIN";
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.brand}>SCA</p>
-          <h1 className={styles.title}>Padres y tutores</h1>
-          <p className={styles.muted}>
-            Vinculá tu cuenta al correo del alumno y consultá su progreso.
-          </p>
-        </div>
-        <Link className={styles.ghost} href="/dashboard">
-          Dashboard
-        </Link>
-      </header>
-
-      {error ? <p role="alert">{error}</p> : null}
-      {message ? <p>{message}</p> : null}
-
-      {user.role === "PARENT" || user.role === "ADMIN" ? (
-        <>
-          <section className={styles.form}>
-            <h2 className={styles.title} style={{ fontSize: "1.1rem" }}>
-              Solicitar vínculo
-            </h2>
-            <form onSubmit={onRequest}>
-              <label className={styles.label}>
-                Correo del alumno
-                <input
-                  className={styles.input}
-                  type="email"
-                  value={studentEmail}
-                  onChange={(e) => setStudentEmail(e.target.value)}
-                  required
-                />
-              </label>
-              <button className={styles.button} type="submit" disabled={loading}>
-                Enviar solicitud
-              </button>
-            </form>
-          </section>
-
-          <section style={{ marginTop: "2rem" }}>
-            <h2 className={styles.title} style={{ fontSize: "1.1rem" }}>
-              Hijos vinculados
-            </h2>
-            <ul className={styles.list}>
-              {children.length === 0 ? (
-                <li className={styles.muted}>Aún no hay vínculos aprobados.</li>
-              ) : (
-                children.map((c) => (
-                  <li key={c.id} className={styles.item}>
-                    <Link href={`/parents/children/${c.id}`}>{c.fullName}</Link>
-                    <p className={styles.muted}>{c.email}</p>
-                  </li>
-                ))
-              )}
-            </ul>
-          </section>
-        </>
+    <AppShell
+      title="Padres y tutores"
+      lead="Vinculá tu cuenta al correo del alumno y consultá su progreso."
+      loading={pageLoading}
+      loadingLabel="Cargando vínculos…"
+      actions={
+        canManageLinks ? (
+          <button type="button" className={styles.button} onClick={openModal}>
+            Solicitar vínculo
+          </button>
+        ) : undefined
+      }
+    >
+      {error ? (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
       ) : null}
+      {message ? <p className={styles.muted}>{message}</p> : null}
 
-      {user.role === "STUDENT" || user.role === "ADMIN" ? (
-        <section style={{ marginTop: "2rem" }}>
-          <h2 className={styles.title} style={{ fontSize: "1.1rem" }}>
-            Solicitudes {user.role === "STUDENT" ? "recibidas" : "pendientes"}
+      {canManageLinks ? (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            Hijos vinculados ({filteredChildren.length})
           </h2>
-          <ul className={styles.list}>
-            {pending.length === 0 ? (
-              <li className={styles.muted}>No hay solicitudes pendientes.</li>
-            ) : (
-              pending.map((r) => (
-                <li key={r.id} className={styles.item}>
-                  <strong>{r.parent.fullName}</strong>
-                  <p className={styles.muted}>
-                    Quiere vincularse con {r.student.fullName} ({r.parent.email})
-                  </p>
-                  {user.role === "STUDENT" || user.role === "ADMIN" ? (
-                    <div className={styles.actions}>
-                      <button
-                        className={styles.button}
-                        type="button"
-                        onClick={() => onApprove(r.id)}
-                      >
-                        Aprobar
-                      </button>
-                      <button
-                        className={styles.ghost}
-                        type="button"
-                        onClick={() => onReject(r.id)}
-                      >
-                        Rechazar
-                      </button>
-                    </div>
-                  ) : null}
-                </li>
-              ))
-            )}
-          </ul>
+          <div className={styles.tableToolbar}>
+            <input
+              className={styles.input}
+              type="search"
+              placeholder="Buscar por nombre o correo…"
+              value={childSearch}
+              onChange={(e) => setChildSearch(e.target.value)}
+              aria-label="Buscar hijos vinculados"
+            />
+          </div>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>Rol</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredChildren.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className={styles.emptyRow}>
+                      {children.length === 0
+                        ? "Aún no hay vínculos aprobados. Usá “Solicitar vínculo” para agregar uno."
+                        : "No hay resultados para esa búsqueda."}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredChildren.map((c) => (
+                    <tr key={c.id}>
+                      <td>{c.fullName}</td>
+                      <td>{c.email}</td>
+                      <td>
+                        <span className={styles.roleBadge}>
+                          {c.role === "STUDENT" ? "Alumno" : c.role}
+                        </span>
+                      </td>
+                      <td>
+                        <Link
+                          className={styles.ghost}
+                          href={`/parents/children/${c.id}`}
+                        >
+                          Ver progreso
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
       ) : null}
-    </main>
+
+      {canReviewRequests ? (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            Solicitudes ({filteredRequests.length})
+          </h2>
+          <div className={styles.tableToolbar}>
+            <input
+              className={styles.input}
+              type="search"
+              placeholder="Buscar por padre o alumno…"
+              value={requestSearch}
+              onChange={(e) => setRequestSearch(e.target.value)}
+              aria-label="Buscar solicitudes"
+            />
+            <select
+              className={styles.input}
+              value={requestStatus}
+              onChange={(e) => setRequestStatus(e.target.value)}
+              aria-label="Filtrar por estado"
+            >
+              <option value="">Todos los estados</option>
+              <option value="pending">Pendiente</option>
+              <option value="approved">Aprobado</option>
+              <option value="rejected">Rechazado</option>
+            </select>
+          </div>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Padre / tutor</th>
+                  <th>Correo</th>
+                  <th>Alumno</th>
+                  <th>Estado</th>
+                  <th>Fecha</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className={styles.emptyRow}>
+                      {requests.length === 0
+                        ? "No hay solicitudes."
+                        : "No hay resultados con esos filtros."}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRequests.map((r) => (
+                    <tr key={r.id}>
+                      <td>{r.parent.fullName}</td>
+                      <td>{r.parent.email}</td>
+                      <td>
+                        {r.student.fullName}
+                        <div className={styles.muted}>{r.student.email}</div>
+                      </td>
+                      <td>
+                        <span className={styles.roleBadge}>
+                          {STATUS_LABELS[r.status] ?? r.status}
+                        </span>
+                      </td>
+                      <td>
+                        {new Date(r.createdAt).toLocaleDateString("es-MX")}
+                      </td>
+                      <td>
+                        {r.status === "pending" ? (
+                          <div className={styles.actions}>
+                            <button
+                              className={styles.button}
+                              type="button"
+                              onClick={() => onApprove(r.id)}
+                            >
+                              Aprobar
+                            </button>
+                            <button
+                              className={styles.ghost}
+                              type="button"
+                              onClick={() => onReject(r.id)}
+                            >
+                              Rechazar
+                            </button>
+                          </div>
+                        ) : (
+                          <span className={styles.muted}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      <Modal open={modalOpen} title="Solicitar vínculo" onClose={closeModal}>
+        <form className={styles.modalForm} onSubmit={onRequest}>
+          <label className={styles.label}>
+            Correo del alumno
+            <input
+              className={styles.input}
+              type="email"
+              value={studentEmail}
+              onChange={(e) => setStudentEmail(e.target.value)}
+              required
+              placeholder="alumno@colegio.edu"
+              autoFocus
+            />
+          </label>
+          {formError ? (
+            <p className={styles.error} role="alert">
+              {formError}
+            </p>
+          ) : null}
+          <div className={styles.modalActions}>
+            <button
+              type="button"
+              className={styles.ghost}
+              onClick={closeModal}
+              disabled={loading}
+            >
+              Cancelar
+            </button>
+            <button className={styles.button} type="submit" disabled={loading}>
+              {loading ? "Enviando…" : "Enviar solicitud"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </AppShell>
   );
 }

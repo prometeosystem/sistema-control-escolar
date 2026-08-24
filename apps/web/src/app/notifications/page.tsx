@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -10,6 +9,7 @@ import {
   markNotificationRead,
   NotificationItem,
 } from "@/shared/api-client";
+import { AppShell } from "@/shared/ui/AppShell";
 import styles from "@/features/classes/classes.module.css";
 
 export default function NotificationsPage() {
@@ -18,6 +18,7 @@ export default function NotificationsPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function load(token: string, onlyUnread: boolean) {
     const page = await listNotifications(token, { unreadOnly: onlyUnread });
@@ -31,9 +32,11 @@ export default function NotificationsPage() {
       router.replace("/login");
       return;
     }
-    load(token, unreadOnly).catch((err) =>
-      setError(err instanceof Error ? err.message : "Error al cargar"),
-    );
+    load(token, unreadOnly)
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : "Error al cargar"),
+      )
+      .finally(() => setLoading(false));
   }, [router, unreadOnly]);
 
   async function onMarkRead(id: string) {
@@ -51,41 +54,40 @@ export default function NotificationsPage() {
   }
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.brand}>SCA</p>
-          <h1 className={styles.title}>Notificaciones</h1>
-          <p className={styles.muted}>
-            {unreadCount} sin leer
-          </p>
-        </div>
-        <div className={styles.actions}>
-          <Link className={styles.ghost} href="/dashboard">
-            Dashboard
-          </Link>
-          <button className={styles.ghost} type="button" onClick={onMarkAll}>
-            Marcar todas leídas
-          </button>
-        </div>
-      </header>
-
-      <label className={styles.label}>
+    <AppShell
+      title="Avisos"
+      lead={`${unreadCount} sin leer`}
+      loading={loading}
+      loadingLabel="Cargando avisos…"
+      actions={
+        <button className={styles.ghost} type="button" onClick={onMarkAll}>
+          Marcar todas leídas
+        </button>
+      }
+    >
+      <label className={styles.label} style={{ marginBottom: "1rem", maxWidth: "16rem" }}>
         <span>
           <input
             type="checkbox"
             checked={unreadOnly}
-            onChange={(e) => setUnreadOnly(e.target.checked)}
+            onChange={(e) => {
+              setLoading(true);
+              setUnreadOnly(e.target.checked);
+            }}
           />{" "}
           Solo no leídas
         </span>
       </label>
 
-      {error ? <p role="alert">{error}</p> : null}
+      {error ? (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <ul className={styles.list}>
         {items.length === 0 ? (
-          <li className={styles.muted}>No hay notificaciones.</li>
+          <li className={styles.muted}>No hay avisos por ahora.</li>
         ) : (
           items.map((n) => (
             <li key={n.id} className={styles.item}>
@@ -100,6 +102,7 @@ export default function NotificationsPage() {
                   className={styles.ghost}
                   type="button"
                   onClick={() => onMarkRead(n.id)}
+                  style={{ marginTop: "0.5rem" }}
                 >
                   Marcar leída
                 </button>
@@ -108,6 +111,6 @@ export default function NotificationsPage() {
           ))
         )}
       </ul>
-    </main>
+    </AppShell>
   );
 }
