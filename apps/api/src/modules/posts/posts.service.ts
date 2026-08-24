@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { RoleInClass } from "@prisma/client";
+import { AttachmentKind, RoleInClass } from "@prisma/client";
 import { CreatePostInput, UpdatePostInput } from "@sca/shared";
 import { PrismaService } from "../../prisma/prisma.service";
 
@@ -37,6 +37,8 @@ export class PostsService {
           id: { in: input.attachmentIds },
           uploadedById: authorId,
           postId: null,
+          assignmentId: null,
+          submissionId: null,
         },
       });
       if (count !== input.attachmentIds.length) {
@@ -51,6 +53,8 @@ export class PostsService {
           authorId,
           title: input.title,
           body: input.body,
+          unit: input.unit ?? null,
+          dueAt: input.dueAt ? new Date(input.dueAt) : null,
         },
       });
 
@@ -58,6 +62,20 @@ export class PostsService {
         await tx.attachment.updateMany({
           where: { id: { in: input.attachmentIds } },
           data: { postId: post.id },
+        });
+      }
+
+      if (input.linkAttachments?.length) {
+        await tx.attachment.createMany({
+          data: input.linkAttachments.map((l) => ({
+            kind: AttachmentKind.link,
+            uploadedById: authorId,
+            externalUrl: l.url,
+            mimeType: "text/uri-list",
+            size: 0,
+            originalName: l.title,
+            postId: post.id,
+          })),
         });
       }
 
@@ -94,6 +112,10 @@ export class PostsService {
       data: {
         ...(input.title ? { title: input.title } : {}),
         ...(input.body ? { body: input.body } : {}),
+        ...(input.unit !== undefined ? { unit: input.unit ?? null } : {}),
+        ...(input.dueAt !== undefined
+          ? { dueAt: input.dueAt ? new Date(input.dueAt) : null }
+          : {}),
       },
       include: {
         author: { select: { id: true, fullName: true, email: true } },
