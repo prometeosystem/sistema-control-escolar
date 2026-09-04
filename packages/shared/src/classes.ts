@@ -28,7 +28,17 @@ export type AddTeacherInput = z.infer<typeof AddTeacherSchema>;
 export const CreatePostSchema = z.object({
   title: z.string().min(2),
   body: z.string().min(1),
+  unit: z.string().min(1).max(120).optional(),
+  dueAt: z.string().datetime().optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
+  linkAttachments: z
+    .array(
+      z.object({
+        url: z.string().url(),
+        title: z.string().min(1).max(200),
+      }),
+    )
+    .optional(),
 });
 export type CreatePostInput = z.infer<typeof CreatePostSchema>;
 

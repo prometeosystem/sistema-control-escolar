@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerRequest, saveSession } from "@/shared/api-client";
+import { PasswordField } from "@/shared/ui/PasswordField";
 import styles from "./auth.module.css";
 
 export function RegisterForm() {
@@ -58,18 +59,14 @@ export function RegisterForm() {
           required
         />
       </label>
-      <label className={styles.label}>
-        Contraseña (mín. 8)
-        <input
-          className={styles.input}
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-        />
-      </label>
+      <PasswordField
+        label="Contraseña (mín. 8)"
+        autoComplete="new-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        minLength={8}
+      />
       <label className={styles.label}>
         Rol
         <select

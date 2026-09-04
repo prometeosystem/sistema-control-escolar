@@ -8,12 +8,17 @@ export const QuestionTypeSchema = z.enum([
   "file_upload",
 ]);
 
+export const ExamQuestionOptionSchema = z.object({
+  id: z.string().min(1),
+  text: z.string().min(1),
+  /** Porcentaje del puntaje de la pregunta (0–100). Si falta, se autoasigna. */
+  weightPercent: z.number().min(0).max(100).optional(),
+});
+
 export const ExamQuestionSchema = z.object({
   type: QuestionTypeSchema,
   prompt: z.string().min(1),
-  options: z
-    .array(z.object({ id: z.string().min(1), text: z.string().min(1) }))
-    .optional(),
+  options: z.array(ExamQuestionOptionSchema).optional(),
   correctAnswer: z.any().optional(),
   points: z.number().positive().max(1000).default(1),
   allowFileUpload: z.boolean().optional(),

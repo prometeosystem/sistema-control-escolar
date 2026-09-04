@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Post" ADD COLUMN "unit" TEXT;
+ALTER TABLE "Post" ADD COLUMN "dueAt" TIMESTAMP(3);

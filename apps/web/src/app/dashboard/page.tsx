@@ -1,86 +1,60 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  AuthUser,
-  clearSession,
-  getAccessToken,
-  getStoredUser,
-  apiGet,
-} from "@/shared/api-client";
-import styles from "./dashboard.module.css";
+import { AuthUser, getStoredUser } from "@/shared/api-client";
+import { AppShell } from "@/shared/ui/AppShell";
+import styles from "@/features/classes/classes.module.css";
 
 export default function DashboardPage() {
-  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getAccessToken();
-    const stored = getStoredUser();
-    if (!token || !stored) {
-      router.replace("/login");
-      return;
-    }
-    setUser(stored);
-    apiGet<AuthUser>("/auth/me", token)
-      .then(setUser)
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "Sesión inválida");
-        clearSession();
-        router.replace("/login");
-      });
-  }, [router]);
+    setUser(getStoredUser());
+  }, []);
 
-  function logout() {
-    clearSession();
-    router.push("/login");
-  }
-
-  if (!user) {
-    return (
-      <main className={styles.main}>
-        <p className={styles.muted}>Cargando sesión…</p>
-      </main>
-    );
-  }
+  const tiles = [
+    {
+      href: "/classes",
+      title: "Clases",
+      meta: "Muro, tareas y exámenes",
+      roles: ["ADMIN", "TEACHER", "STUDENT"],
+    },
+    {
+      href: "/parents",
+      title: "Padres / vínculos",
+      meta: "Solicitudes y progreso",
+      roles: ["ADMIN", "STUDENT", "PARENT"],
+    },
+    {
+      href: "/admin",
+      title: "Panel admin",
+      meta: "Usuarios y estadísticas",
+      roles: ["ADMIN"],
+    },
+    {
+      href: "/admin/settings/email",
+      title: "Configuración",
+      meta: "Correo electrónico (SMTP)",
+      roles: ["ADMIN"],
+    },
+  ].filter((t) => !user || t.roles.includes(user.role));
 
   return (
-    <main className={styles.main}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.brand}>SCA</p>
-          <h1 className={styles.title}>Hola, {user.fullName}</h1>
-          <p className={styles.muted}>
-            Rol: {user.role} · {user.email}
-          </p>
-        </div>
-        <button type="button" className={styles.button} onClick={logout}>
-          Cerrar sesión
-        </button>
-      </header>
-      {error ? <p role="alert">{error}</p> : null}
-      <section className={styles.panel}>
-        <h2>Fase 6 lista</h2>
-        <p className={styles.muted}>
-          Padres, panel admin y flujo completo de la escuela.
-        </p>
-        <nav className={styles.nav}>
-          <Link href="/classes">Clases</Link>
-          <Link href="/notifications">Notificaciones</Link>
-          {["PARENT", "STUDENT", "ADMIN"].includes(user.role) ? (
-            <Link href="/parents">Padres / vínculos</Link>
-          ) : null}
-          {user.role === "ADMIN" ? (
-            <>
-              <Link href="/admin">Panel admin</Link>
-              <Link href="/admin/smtp">SMTP</Link>
-            </>
-          ) : null}
-        </nav>
-      </section>
-    </main>
+    <AppShell
+      title={user ? `Hola, ${user.fullName.split(" ")[0]}` : "Inicio"}
+      lead="Elegí un módulo para continuar."
+      loading={!user}
+      loadingLabel="Cargando inicio…"
+    >
+      <div className={styles.grid}>
+        {tiles.map((tile) => (
+          <Link key={tile.href} href={tile.href} className={styles.tile}>
+            <p className={styles.tileTitle}>{tile.title}</p>
+            <p className={styles.tileMeta}>{tile.meta}</p>
+          </Link>
+        ))}
+      </div>
+    </AppShell>
   );
 }

@@ -23,7 +23,7 @@ Monorepo Classroom-like para secundaria: clases, muro, tareas individuales/equip
 - **Shared:** `packages/shared` — contratos Zod
 - **DB:** PostgreSQL (Docker Compose)
 - **Storage:** Firebase Storage
-- **Mail:** SMTP (Nodemailer); admin configura desde `/admin/smtp` (DB) con fallback a `SMTP_*`
+- **Mail:** SMTP (Nodemailer); admin configura desde `/admin/settings/email` (DB) con fallback a `SMTP_*`
 
 ## Inicio rápido
 

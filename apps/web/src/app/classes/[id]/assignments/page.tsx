@@ -11,6 +11,7 @@ import {
   publishAssignment,
   Assignment,
 } from "@/shared/api-client";
+import { AppShell } from "@/shared/ui/AppShell";
 import styles from "@/features/classes/classes.module.css";
 
 export default function ClassAssignmentsPage() {
@@ -28,6 +29,7 @@ export default function ClassAssignmentsPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [linkTitle, setLinkTitle] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   function reload(token: string) {
     return listAssignments(token, params.id).then(setItems);
@@ -39,9 +41,11 @@ export default function ClassAssignmentsPage() {
       router.replace("/login");
       return;
     }
-    reload(token).catch((err) =>
-      setError(err instanceof Error ? err.message : "Error al cargar tareas"),
-    );
+    reload(token)
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : "Error al cargar tareas"),
+      )
+      .finally(() => setPageLoading(false));
   }, [params.id, router]);
 
   async function onCreate(e: FormEvent) {
@@ -76,25 +80,22 @@ export default function ClassAssignmentsPage() {
   }
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.brand}>SCA</p>
-          <h1 className={styles.title}>Tareas</h1>
-          <p className={styles.muted}>
-            Archivos: PDF, DOC/DOCX e imágenes hasta 10 MB · también links
-          </p>
-        </div>
-        <div className={styles.actions}>
+    <AppShell
+      title="Tareas"
+      lead="Archivos: PDF, DOC/DOCX e imágenes hasta 10 MB · también links"
+      loading={pageLoading}
+      loadingLabel="Cargando tareas…"
+      actions={
+        <>
           <Link className={styles.ghost} href={`/classes/${params.id}`}>
             Muro
           </Link>
           <Link className={styles.ghost} href="/classes">
             Clases
           </Link>
-        </div>
-      </header>
-
+        </>
+      }
+    >
       {error ? (
         <p className={styles.error} role="alert">
           {error}
@@ -194,6 +195,6 @@ export default function ClassAssignmentsPage() {
       {items.length === 0 ? (
         <p className={styles.muted}>No hay tareas publicadas todavía.</p>
       ) : null}
-    </main>
+    </AppShell>
   );
 }

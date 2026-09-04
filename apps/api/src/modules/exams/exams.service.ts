@@ -520,6 +520,13 @@ export class ExamsService {
         correctAnswer: q.correctAnswer,
         answer: ans?.answer,
         points: Number(q.points),
+        options: Array.isArray(q.options)
+          ? (q.options as Array<{
+              id: string;
+              text?: string;
+              weightPercent?: number;
+            }>)
+          : null,
         autoGradeEnabled: attempt.exam.autoGradeEnabled,
         provider: attempt.exam.autoGradeProvider,
         model: attempt.exam.autoGradeModel,

@@ -9,6 +9,7 @@ import {
   getAccessToken,
   submitExam,
 } from "@/shared/api-client";
+import { AppShell } from "@/shared/ui/AppShell";
 import styles from "@/features/classes/classes.module.css";
 
 export default function ExamAttemptPage() {
@@ -22,6 +23,7 @@ export default function ExamAttemptPage() {
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -29,7 +31,6 @@ export default function ExamAttemptPage() {
       router.replace("/login");
       return;
     }
-    // Re-fetch by starting again returns same in-progress attempt
     import("@/shared/api-client").then(({ startExam }) =>
       startExam(token, params.examId)
         .then((a) => {
@@ -42,7 +43,8 @@ export default function ExamAttemptPage() {
         })
         .catch((err) =>
           setError(err instanceof Error ? err.message : "No se pudo cargar"),
-        ),
+        )
+        .finally(() => setPageLoading(false)),
     );
   }, [params.examId, router]);
 
@@ -73,39 +75,37 @@ export default function ExamAttemptPage() {
 
   if (!attempt) {
     return (
-      <main className={styles.page}>
-        <p className={styles.muted}>Cargando intento…</p>
+      <AppShell title="Intento" loading={pageLoading} loadingLabel="Cargando intento…">
         {error ? <p className={styles.error}>{error}</p> : null}
-      </main>
+      </AppShell>
     );
   }
 
   const done = attempt.status !== "in_progress";
 
+  const leadParts = [
+    `${attempt.questions.length} preguntas`,
+    attempt.timeLimitMin ? `${attempt.timeLimitMin} min` : null,
+    done && attempt.score != null
+      ? `Nota ${attempt.score}/${attempt.maxScore}`
+      : null,
+    done && attempt.passed != null
+      ? attempt.passed
+        ? "Aprobado"
+        : "No aprobado"
+      : null,
+  ].filter(Boolean);
+
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.brand}>SCA</p>
-          <h1 className={styles.title}>Intento #{attempt.attemptNo}</h1>
-          <p className={styles.muted}>
-            {attempt.questions.length} preguntas
-            {attempt.timeLimitMin ? ` · ${attempt.timeLimitMin} min` : ""}
-            {done && attempt.score != null
-              ? ` · Nota ${attempt.score}/${attempt.maxScore}`
-              : ""}
-            {done && attempt.passed != null
-              ? attempt.passed
-                ? " · Aprobado"
-                : " · No aprobado"
-              : ""}
-          </p>
-        </div>
+    <AppShell
+      title={`Intento #${attempt.attemptNo}`}
+      lead={leadParts.join(" · ")}
+      actions={
         <Link className={styles.ghost} href={`/classes/${params.id}/exams`}>
           Volver
         </Link>
-      </header>
-
+      }
+    >
       {error ? (
         <p className={styles.error} role="alert">
           {error}
@@ -213,6 +213,6 @@ export default function ExamAttemptPage() {
           {loading ? "Enviando…" : "Enviar examen"}
         </button>
       ) : null}
-    </main>
+    </AppShell>
   );
 }

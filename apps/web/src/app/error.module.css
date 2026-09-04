@@ -1,0 +1,63 @@
+.main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  text-align: center;
+}
+
+.code {
+  margin: 0;
+  font-family: var(--font-display), serif;
+  font-size: clamp(4rem, 14vw, 7rem);
+  font-weight: 650;
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: -0.04em;
+}
+
+.title {
+  margin: 0.75rem 0 0.5rem;
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+}
+
+.lead {
+  margin: 0 0 1.75rem;
+  max-width: 26rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: center;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.1rem;
+  border-radius: 0.65rem;
+  font-weight: 650;
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.secondary {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}

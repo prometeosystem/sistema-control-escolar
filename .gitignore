@@ -16,3 +16,4 @@ firebase-service-account.json
 .idea
 .vscode
 *.tsbuildinfo
+.scae-prod-credentials.txt

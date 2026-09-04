@@ -152,6 +152,8 @@ model Post {
   author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
   title       String
   body        String
+  unit        String?
+  dueAt       DateTime?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   attachments Attachment[]

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -12,9 +11,11 @@ import {
   testSmtp,
   updateSmtpSettings,
 } from "@/shared/api-client";
+import { PasswordField } from "@/shared/ui/PasswordField";
+import { AppShell } from "@/shared/ui/AppShell";
 import styles from "@/features/classes/classes.module.css";
 
-export default function AdminSmtpPage() {
+export default function EmailSettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [settings, setSettings] = useState<SmtpPublicSettings | null>(null);
@@ -30,6 +31,7 @@ export default function AdminSmtpPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -56,8 +58,9 @@ export default function AdminSmtpPage() {
         setFromName(data.fromName || "SCA");
       })
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "No se pudo cargar SMTP"),
-      );
+        setError(err instanceof Error ? err.message : "No se pudo cargar"),
+      )
+      .finally(() => setPageLoading(false));
   }, [router]);
 
   async function onSave(e: FormEvent) {
@@ -80,7 +83,7 @@ export default function AdminSmtpPage() {
       });
       setSettings(data);
       setPassword("");
-      setMessage("Configuración SMTP guardada.");
+      setMessage("Configuración guardada correctamente.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
     } finally {
@@ -97,7 +100,7 @@ export default function AdminSmtpPage() {
     try {
       const result = await testSmtp(token, testTo);
       if (result.skipped) {
-        setMessage("SMTP no está habilitado; el correo se omitió.");
+        setMessage("El correo está deshabilitado; no se envió la prueba.");
       } else {
         setMessage(`Correo de prueba enviado a ${testTo}.`);
       }
@@ -110,45 +113,31 @@ export default function AdminSmtpPage() {
 
   if (!user) {
     return (
-      <main className={styles.page}>
-        <p className={styles.muted}>Cargando…</p>
-      </main>
+      <AppShell title="Configuración del correo" loading loadingLabel="Cargando…">
+        {null}
+      </AppShell>
     );
   }
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.brand}>SCA</p>
-          <h1 className={styles.title}>SMTP (admin)</h1>
-          <p className={styles.muted}>
-            Configurá el servidor de correo para notificaciones. La contraseña
-            nunca se muestra; dejala vacía para conservar la actual.
-          </p>
-        </div>
-        <div className={styles.actions}>
-          <Link className={styles.ghost} href="/dashboard">
-            Dashboard
-          </Link>
-          <Link className={styles.ghost} href="/notifications">
-            Notificaciones
-          </Link>
-        </div>
-      </header>
-
+    <AppShell
+      title="Configuración del correo electrónico"
+      lead="Servidor SMTP para notificaciones. Dejá la contraseña vacía para conservar la actual."
+      loading={pageLoading}
+      loadingLabel="Cargando configuración…"
+    >
       {settings ? (
         <p className={styles.muted}>
-          Estado: {settings.configured ? "guardado en DB" : "sin configurar"} ·
-          fuente {settings.sourceHint}
-          {settings.hasPassword ? " · hay contraseña guardada" : ""}
+          Estado: {settings.configured ? "configurado" : "sin configurar"} ·{" "}
+          {settings.sourceHint}
+          {settings.hasPassword ? " · contraseña guardada" : ""}
         </p>
       ) : null}
 
-      {error ? <p role="alert">{error}</p> : null}
-      {message ? <p>{message}</p> : null}
+      {error ? <p className={styles.error} role="alert">{error}</p> : null}
+      {message ? <p className={styles.muted}>{message}</p> : null}
 
-      <form className={styles.form} onSubmit={onSave}>
+      <form className={`${styles.form} ${styles.formNarrow}`} onSubmit={onSave}>
         <label className={styles.label}>
           <span>
             <input
@@ -156,11 +145,11 @@ export default function AdminSmtpPage() {
               checked={enabled}
               onChange={(e) => setEnabled(e.target.checked)}
             />{" "}
-            Habilitado
+            Correo habilitado
           </span>
         </label>
         <label className={styles.label}>
-          Host
+          Host SMTP
           <input
             className={styles.input}
             value={host}
@@ -188,7 +177,7 @@ export default function AdminSmtpPage() {
               checked={secure}
               onChange={(e) => setSecure(e.target.checked)}
             />{" "}
-            TLS/SSL (secure)
+            TLS/SSL
           </span>
         </label>
         <label className={styles.label}>
@@ -200,21 +189,17 @@ export default function AdminSmtpPage() {
             autoComplete="username"
           />
         </label>
+        <PasswordField
+          label="Contraseña SMTP"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="new-password"
+          placeholder={
+            settings?.hasPassword ? "(conservar actual)" : "opcional"
+          }
+        />
         <label className={styles.label}>
-          Contraseña
-          <input
-            className={styles.input}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-            placeholder={
-              settings?.hasPassword ? "(conservar actual)" : "opcional"
-            }
-          />
-        </label>
-        <label className={styles.label}>
-          From (email)
+          Remitente (email)
           <input
             className={styles.input}
             type="email"
@@ -224,7 +209,7 @@ export default function AdminSmtpPage() {
           />
         </label>
         <label className={styles.label}>
-          From (nombre)
+          Remitente (nombre)
           <input
             className={styles.input}
             value={fromName}
@@ -233,32 +218,32 @@ export default function AdminSmtpPage() {
           />
         </label>
         <button className={styles.button} type="submit" disabled={loading}>
-          {loading ? "Guardando…" : "Guardar"}
+          {loading ? "Guardando…" : "Guardar configuración"}
         </button>
       </form>
 
-      <section style={{ marginTop: "2rem" }}>
-        <h2 className={styles.title} style={{ fontSize: "1.1rem" }}>
-          Probar envío
-        </h2>
-        <label className={styles.label}>
-          Destinatario
-          <input
-            className={styles.input}
-            type="email"
-            value={testTo}
-            onChange={(e) => setTestTo(e.target.value)}
-          />
-        </label>
-        <button
-          className={styles.ghost}
-          type="button"
-          onClick={onTest}
-          disabled={loading || !testTo}
-        >
-          Enviar correo de prueba
-        </button>
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Probar envío</h2>
+        <div className={`${styles.form} ${styles.formNarrow}`}>
+          <label className={styles.label}>
+            Destinatario
+            <input
+              className={styles.input}
+              type="email"
+              value={testTo}
+              onChange={(e) => setTestTo(e.target.value)}
+            />
+          </label>
+          <button
+            className={styles.ghost}
+            type="button"
+            onClick={onTest}
+            disabled={loading || !testTo}
+          >
+            Enviar correo de prueba
+          </button>
+        </div>
       </section>
-    </main>
+    </AppShell>
   );
 }

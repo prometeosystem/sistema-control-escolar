@@ -23,6 +23,7 @@ export class AutoGradeService {
     correctAnswer: unknown;
     answer: unknown;
     points: number;
+    options?: Array<{ id: string; text?: string; weightPercent?: number }> | null;
     autoGradeEnabled: boolean;
     provider: AutoGradeProvider;
     model?: string | null;
@@ -57,12 +58,38 @@ export class AutoGradeService {
       const given = String(
         (params.answer as { optionId?: string })?.optionId ?? params.answer ?? "",
       );
+      const options = Array.isArray(params.options) ? params.options : [];
+      const selected = options.find((o) => o.id === given);
+      const hasCustomWeights = options.some(
+        (o) => typeof o.weightPercent === "number",
+      );
+
+      let weightPercent: number;
+      if (hasCustomWeights) {
+        weightPercent =
+          typeof selected?.weightPercent === "number"
+            ? selected.weightPercent
+            : given === expected
+              ? 100
+              : 0;
+      } else {
+        weightPercent = expected.length > 0 && expected === given ? 100 : 0;
+      }
+
+      const awarded =
+        Math.round(((points * Math.min(100, Math.max(0, weightPercent))) / 100) * 100) /
+        100;
       const ok = expected.length > 0 && expected === given;
+
       return {
         isCorrect: ok,
-        pointsAwarded: ok ? points : 0,
+        pointsAwarded: awarded,
         needsManualReview: false,
         autoGraded: true,
+        feedback:
+          hasCustomWeights && !ok && awarded > 0
+            ? `Crédito parcial (${weightPercent}%)`
+            : undefined,
       };
     }
 
